@@ -6,7 +6,7 @@ type Auth struct {
 	Book_id int `json:"book_id"`
 }
 
-type User struct {
+type Student struct {
 	Id          int       `json:"id"`
 	Book_id     int       `json:"book_id"`
 	Surname     string    `json:"surname"`

@@ -3,6 +3,7 @@ package controllers
 import (
 	"bobri/models"
 	"context"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -24,17 +25,17 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		ctxStud, cancelStud := context.WithTimeout(c.Request.Context(), 3*time.Second)
 
-		defer cancel()
+		defer cancelStud()
 
-		err := pool.QueryRow(ctx, "select * from students where book_id = $1", AuthCheck.Book_id).Scan(&CurStudent.Id, &CurStudent.Book_id, &CurStudent.Surname, &CurStudent.Name, &CurStudent.Middle_name, &CurStudent.Birth_date, &CurStudent.Group)
+		err := pool.QueryRow(ctxStud, "select * from students where book_id = $1", AuthCheck.Book_id).Scan(&CurStudent.Id, &CurStudent.Book_id, &CurStudent.Surname, &CurStudent.Name, &CurStudent.Middle_name, &CurStudent.Birth_date, &CurStudent.Group)
 		if err != nil {
-			if err == pgx.ErrNoRows { /* Если проверили зачетку и ее нет в списке студентов */
-				c.JSON(http.StatusConflict, gin.H{
+			if errors.Is(err, pgx.ErrNoRows) { /* Если проверили зачетку и ее нет в списке студентов */
+				c.JSON(http.StatusNotFound, gin.H{
 					"ok": "false",
 				})
-			return
+				return
 			}
 
 			c.JSON(http.StatusInternalServerError, gin.H{ /* Ошибка при запросе */
@@ -44,17 +45,19 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		ctxUser, cancelUser := context.WithTimeout(c.Request.Context(), 3*time.Second)
 
-		err := pool.QueryRow(ctx, "select * from users where book_id = $1", AuthCheck.Book_id).Scan(&exists)
+		defer cancelUser()
+
+		err = pool.QueryRow(ctxUser, "select * from users where book_id = $1", AuthCheck.Book_id).Scan(&exists)
 		if err != nil {
-			if err == pgx.ErrNoRows {
-				c.JSON(http.StatusOK, AuthStatus {
-					Status: true,
-					Display_name: CurStudent.Name,
-					group: CurStudent.Group
-					Link_token: "", /* TODO */
-					Link_token_ttl_sec 300,
+			if errors.Is(err, pgx.ErrNoRows) {
+				c.JSON(http.StatusOK, models.AuthStatus{
+					Status:             "free",
+					Display_name:       CurStudent.Name,
+					Group:              CurStudent.Group,
+					Link_token:         "", /* TODO */
+					Link_token_ttl_sec: 300,
 				})
 				exists = false
 			} else {
