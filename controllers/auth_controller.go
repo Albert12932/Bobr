@@ -29,7 +29,7 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		err := pool.QueryRow(ctx, "select * from users where book_id = $1", AuthCheck.Book_id).Scan(&CurUser.Id, &CurUser.Book_id, &CurUser.Surname, &CurUser.Name, &CurUser.Middle_name, &CurUser.Birth_date, &CurUser.Group)
 		if err != nil {
-			if err == sql.ErrNoRows {
+			if err == pgx.ErrNoRows {
 				c.JSON(http.StatusOK, models.AuthStatus{
 					Status:             "free",
 					Display_name:       CurUser.Name,
@@ -44,6 +44,7 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 				"error":   "DATABASE_ERROR",
 				"message": err.Error(),
 			})
+			return
 		}
 		c.JSON(http.StatusConflict, gin.H{
 			"ok": "false",
