@@ -33,8 +33,12 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		err := pool.QueryRow(ctx, "select * from users where book_id = $1", AuthCheck.Book_id).Scan(&CurUser.Id, &CurUser.Book_id, &CurUser.Surname, &CurUser.Name, &CurUser.Middle_name, &CurUser.Birth_date, &CurUser.Group)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				c.JSON(http.StatusNotFound, gin.H{
-					"error": "no user found",
+				c.JSON(http.StatusOK, models.AuthStatus{
+					Status:             "free",
+					Display_name:       CurUser.Name,
+					Group:              CurUser.Group,
+					Link_token:         "Null",
+					Link_token_ttl_sec: 0, /* TODO */
 				})
 				return
 			}
@@ -44,12 +48,8 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			})
 			return
 		}
-		c.JSON(http.StatusOK, models.AuthStatus{
-			Status:             "free",
-			Display_name:       CurUser.Name,
-			Group:              CurUser.Group,
-			Link_token:         "Null",
-			Link_token_ttl_sec: 0, /* TODO */
+		c.JSON(http.StatusConflict, gin.H{
+			"error": "Зачетка уже используется",
 		})
 
 	}
