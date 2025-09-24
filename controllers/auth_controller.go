@@ -39,15 +39,14 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 				})
 				return
 			}
+
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error":   "DATABASE_ERROR",
 				"message": err.Error(),
 			})
-			return
 		}
 		c.JSON(http.StatusConflict, gin.H{
-			"error": "Зачетка уже используется",
+			"ok": "false",
 		})
-
 	}
 }
