@@ -28,8 +28,6 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		defer cancel()
 
-		fmt.Println(AuthCheck.Book_id)
-
 		err := pool.QueryRow(ctx, "select * from users where book_id = $1", AuthCheck.Book_id).Scan(&CurUser.Id, &CurUser.Book_id, &CurUser.Surname, &CurUser.Name, &CurUser.Middle_name, &CurUser.Birth_date, &CurUser.Group)
 		if err != nil {
 			if err == sql.ErrNoRows {
