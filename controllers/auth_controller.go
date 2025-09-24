@@ -13,7 +13,8 @@ import (
 func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var AuthCheck models.Auth
-		var CurUser models.User
+		var CurStudent models.Student
+		var exists bool
 
 		if err := c.ShouldBindJSON(&AuthCheck); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -27,27 +28,47 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		defer cancel()
 
-		err := pool.QueryRow(ctx, "select * from users where book_id = $1", AuthCheck.Book_id).Scan(&CurUser.Id, &CurUser.Book_id, &CurUser.Surname, &CurUser.Name, &CurUser.Middle_name, &CurUser.Birth_date, &CurUser.Group)
+		err := pool.QueryRow(ctx, "select * from students where book_id = $1", AuthCheck.Book_id).Scan(&CurStudent.Id, &CurStudent.Book_id, &CurStudent.Surname, &CurStudent.Name, &CurStudent.Middle_name, &CurStudent.Birth_date, &CurStudent.Group)
 		if err != nil {
-			if err == pgx.ErrNoRows {
-				c.JSON(http.StatusOK, models.AuthStatus{
-					Status:             "free",
-					Display_name:       CurUser.Name,
-					Group:              CurUser.Group,
-					Link_token:         "Null",
-					Link_token_ttl_sec: 0, /* TODO */
+			if err == pgx.ErrNoRows { /* Если проверили зачетку и ее нет в списке студентов */
+				c.JSON(http.StatusConflict, gin.H{
+					"ok": "false",
 				})
-				return
+			return
 			}
 
-			c.JSON(http.StatusInternalServerError, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{ /* Ошибка при запросе */
 				"error":   "DATABASE_ERROR",
 				"message": err.Error(),
 			})
 			return
 		}
-		c.JSON(http.StatusConflict, gin.H{
-			"ok": "false",
-		})
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+
+		err := pool.QueryRow(ctx, "select * from users where book_id = $1", AuthCheck.Book_id).Scan(&exists)
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				c.JSON(http.StatusOK, AuthStatus {
+					Status: true,
+					Display_name: CurStudent.Name,
+					group: CurStudent.Group
+					Link_token: "", /* TODO */
+					Link_token_ttl_sec 300,
+				})
+				exists = false
+			} else {
+				c.JSON(http.StatusInternalServerError, gin.H{ /* Ошибка при запросе */
+					"error":   "DATABASE_ERROR",
+					"message": err.Error(),
+				})
+				return
+			}
+		} else {
+			c.JSON(http.StatusConflict, gin.H{
+				"ok": "false",
+			})
+			exists = true
+		}
 	}
 }
