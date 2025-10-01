@@ -49,7 +49,7 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		defer cancelStud()
 
-		err := pool.QueryRow(ctxStud, `SELECT id, book_id, surname, name, middle_name, birth_date, "group"
+		err := pool.QueryRow(ctxStud, `SELECT id, book_id, surname, name, middle_name, birth_date, "student_group"
 			   FROM students WHERE book_id = $1`,
 			AuthCheck.Book_id,
 		).Scan(
