@@ -25,4 +25,5 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./initdb:/docker-entrypoint-initdb.d
 volumes:
-  postgres_data:
+  pgdata:
+    external: true
