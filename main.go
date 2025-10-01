@@ -2,6 +2,7 @@ package main
 
 import (
 	"bobri/config"
+	"bobri/helpers"
 	"bobri/routes"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -31,7 +32,10 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	routes.AuthRoutes(r, db)
+	secret := os.Getenv("JWT_SECRET")
+	jwtMaker := helpers.NewJWTMaker([]byte(secret), 24*time.Hour)
+
+	routes.AuthRoutes(r, db, jwtMaker)
 
 	go func() {
 		log.Println("🚀 Сервер запущен на порту 8080")

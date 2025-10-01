@@ -28,3 +28,22 @@ type AuthStatus struct {
 	Link_token         string `json:"link_token"`
 	Link_token_ttl_sec int    `json:"link_token_ttl_sec"`
 }
+
+type RegisterReq struct {
+	Password string `json:"password" binding:"required,min=8"`
+}
+
+type RegisterResp struct {
+	OK   bool `json:"ok"`
+	User struct {
+		ID        int64  `json:"id"`
+		FirstName string `json:"first_name"`
+		LastName  string `json:"last_name"`
+	} `json:"user"`
+	Session struct {
+		Auth struct {
+			Token     string    `json:"token"`
+			ExpiresAt time.Time `json:"expires_at"`
+		} `json:"auth"`
+	} `json:"session"`
+}
