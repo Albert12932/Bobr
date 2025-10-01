@@ -98,7 +98,7 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		// 5) Создаём пользователя
 		var userID int64
 		err = tx.QueryRow(ctx, `
-			INSERT INTO users (book_id, first_name, last_name, middle_name, student_group, birth_date, password_hash)
+			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password_hash)
 			VALUES ($1, $2, $3, $4, $5, $6, $7)
 			RETURNING id
 		`, bookID, firstName, lastName, middleName, studentGroup, birth_date, (hash)).Scan(&userID)
