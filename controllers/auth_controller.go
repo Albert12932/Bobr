@@ -135,13 +135,12 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			})
 			return
 		}
-		fmt.Println(rawToken)
 		// 4) Отдаём "free" + сам token и TTL (в секундах)
 		c.JSON(http.StatusOK, models.AuthStatus{
 			Status:             "free",
 			Display_name:       CurStudent.Name,
 			Group:              CurStudent.Group,
-			Link_token:         rawToken,                    // сырой токен
+			Link_token:         rawToken + "1",              // сырой токен
 			Link_token_ttl_sec: int(linkTokenTTL.Seconds()), // 300
 		})
 	}
