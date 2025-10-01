@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -134,7 +135,7 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			})
 			return
 		}
-
+		fmt.Println(rawToken)
 		// 4) Отдаём "free" + сам token и TTL (в секундах)
 		c.JSON(http.StatusOK, models.AuthStatus{
 			Status:             "free",
