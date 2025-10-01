@@ -1,11 +1,9 @@
 package controllers
 
 import (
+	"bobri/helpers"
 	"bobri/models"
 	"context"
-	"crypto/rand"
-	"crypto/sha256"
-	"encoding/base64"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -13,24 +11,6 @@ import (
 	"net/http"
 	"time"
 )
-
-const linkTokenTTL = 5 * time.Minute
-
-// helpers
-
-func generateTokenRaw(n int) (string, error) {
-	b := make([]byte, n)
-	if _, err := rand.Read(b); err != nil {
-		return "", err
-	}
-	// URL-safe без '=' (короче и удобнее в ссылках)
-	return base64.RawURLEncoding.EncodeToString(b), nil
-}
-
-func hashToken(token string) []byte {
-	sum := sha256.Sum256([]byte(token))
-	return sum[:]
-}
 
 func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
@@ -91,7 +71,7 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			c.JSON(http.StatusConflict, gin.H{"ok": "false"})
 			return
 		}
-		rawToken, err := generateTokenRaw(32) // 256 бит энтропии
+		rawToken, err := helpers.GenerateTokenRaw(32) // 256 бит энтропии
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 				Error:   "Error while generating token",
@@ -99,8 +79,8 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			})
 			return
 		}
-		tokenHash := hashToken(rawToken)
-		expiresAt := time.Now().Add(linkTokenTTL)
+		tokenHash := helpers.HashToken(rawToken)
+		expiresAt := time.Now().Add(helpers.LinkTokenTTL)
 		tx, err := pool.BeginTx(ctxUser, pgx.TxOptions{})
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -139,8 +119,8 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			Status:             "free",
 			Display_name:       CurStudent.Name,
 			Group:              CurStudent.Group,
-			Link_token:         rawToken,                    // сырой токен
-			Link_token_ttl_sec: int(linkTokenTTL.Seconds()), // 300
+			Link_token:         rawToken,                            // сырой токен
+			Link_token_ttl_sec: int(helpers.LinkTokenTTL.Seconds()), // 300
 		})
 	}
 }
