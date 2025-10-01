@@ -3,6 +3,9 @@ package controllers
 import (
 	"bobri/models"
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"errors"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
@@ -11,16 +14,33 @@ import (
 	"time"
 )
 
+const linkTokenTTL = 5 * time.Minute
+
+// helpers
+
+func generateTokenRaw(n int) (string, error) {
+	b := make([]byte, n)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	// URL-safe без '=' (короче и удобнее в ссылках)
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+func hashToken(token string) []byte {
+	sum := sha256.Sum256([]byte(token))
+	return sum[:]
+}
+
 func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var AuthCheck models.Auth
 		var CurStudent models.Student
-		var exists bool
 
 		if err := c.ShouldBindJSON(&AuthCheck); err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{
-				"error":   "Invalid book_id",
-				"message": err.Error(),
+			c.JSON(http.StatusBadRequest, models.ErrorResponse{
+				Error:   "Error while BindJSON",
+				Message: err.Error(),
 			})
 			return
 		}
@@ -29,49 +49,99 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		defer cancelStud()
 
-		err := pool.QueryRow(ctxStud, "select * from students where book_id = $1", AuthCheck.Book_id).Scan(&CurStudent.Id, &CurStudent.Book_id, &CurStudent.Surname, &CurStudent.Name, &CurStudent.Middle_name, &CurStudent.Birth_date, &CurStudent.Group)
+		err := pool.QueryRow(ctxStud, `SELECT id, book_id, surname, name, middle_name, birth_date, "group"
+			   FROM students WHERE book_id = $1`,
+			AuthCheck.Book_id,
+		).Scan(
+			&CurStudent.Id,
+			&CurStudent.Book_id,
+			&CurStudent.Surname,
+			&CurStudent.Name,
+			&CurStudent.Middle_name,
+			&CurStudent.Birth_date,
+			&CurStudent.Group,
+		)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) { /* Если проверили зачетку и ее нет в списке студентов */
-				c.JSON(http.StatusNotFound, gin.H{
-					"ok": "false",
-				})
+			if errors.Is(err, pgx.ErrNoRows) { // Если зачетки нет
+				c.JSON(http.StatusNotFound, gin.H{"ok": "false"})
 				return
 			}
-
-			c.JSON(http.StatusInternalServerError, gin.H{ /* Ошибка при запросе */
-				"error":   "DATABASE_ERROR",
-				"message": err.Error(),
-			})
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{ // Ошибка при поиске зачетки
+				Error:   "Error while checking student book_id",
+				Message: err.Error()})
 			return
 		}
 
 		ctxUser, cancelUser := context.WithTimeout(c.Request.Context(), 3*time.Second)
-
 		defer cancelUser()
-
-		err = pool.QueryRow(ctxUser, "select * from users where book_id = $1", AuthCheck.Book_id).Scan(&exists)
+		var exists bool
+		err = pool.QueryRow(ctxUser,
+			`SELECT EXISTS(SELECT 1 FROM users WHERE book_id = $1)`,
+			AuthCheck.Book_id,
+		).Scan(&exists)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) {
-				c.JSON(http.StatusOK, models.AuthStatus{
-					Status:             "free",
-					Display_name:       CurStudent.Name,
-					Group:              CurStudent.Group,
-					Link_token:         "", /* TODO */
-					Link_token_ttl_sec: 300,
-				})
-				exists = false
-			} else {
-				c.JSON(http.StatusInternalServerError, gin.H{ /* Ошибка при запросе */
-					"error":   "DATABASE_ERROR",
-					"message": err.Error(),
-				})
-				return
-			}
-		} else {
-			c.JSON(http.StatusConflict, gin.H{
-				"ok": "false",
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "Error while checking if user exists",
+				Message: err.Error(),
 			})
-			exists = true
+			return
 		}
+		if exists {
+			// Уже зарегистрирован
+			c.JSON(http.StatusConflict, gin.H{"ok": "false"})
+			return
+		}
+		rawToken, err := generateTokenRaw(32) // 256 бит энтропии
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "Error while generating token",
+				Message: err.Error(),
+			})
+			return
+		}
+		tokenHash := hashToken(rawToken)
+		expiresAt := time.Now().Add(linkTokenTTL)
+		tx, err := pool.BeginTx(ctxUser, pgx.TxOptions{})
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "Error while creating transaction",
+				Message: err.Error(),
+			})
+			return
+		}
+		defer func() { _ = tx.Rollback(ctxUser) }()
+
+		_, err = tx.Exec(ctxUser, `
+			INSERT INTO link_tokens (book_id, token_hash, expires_at)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (book_id)
+			DO UPDATE SET token_hash = EXCLUDED.token_hash,
+			              expires_at = EXCLUDED.expires_at,
+			              created_at = now()
+		`, AuthCheck.Book_id, tokenHash, expiresAt)
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "Error while updating token information",
+				Message: err.Error(),
+			})
+			return
+		}
+		if err := tx.Commit(ctxUser); err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "Error while commiting transaction",
+				Message: err.Error(),
+			})
+			return
+		}
+
+		// 4) Отдаём "free" + сам token и TTL (в секундах)
+		c.JSON(http.StatusOK, models.AuthStatus{
+			Status:             "free",
+			Display_name:       CurStudent.Name,
+			Group:              CurStudent.Group,
+			Link_token:         rawToken,                    // сырой токен
+			Link_token_ttl_sec: int(linkTokenTTL.Seconds()), // 300
+		})
 	}
 }

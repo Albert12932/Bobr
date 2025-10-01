@@ -6,6 +6,11 @@ type Auth struct {
 	Book_id int `json:"book_id"`
 }
 
+type ErrorResponse struct {
+	Error   string
+	Message string
+}
+
 type Student struct {
 	Id          int       `json:"id"`
 	Book_id     int       `json:"book_id"`
