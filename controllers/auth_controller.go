@@ -68,7 +68,7 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 		if exists {
 			// Уже зарегистрирован
-			c.JSON(http.StatusConflict, gin.H{"ok": "false"})
+			c.JSON(http.StatusConflict, gin.H{"ok": "false", "status": "Зачетка уже используется"})
 			return
 		}
 		rawToken, err := helpers.GenerateTokenRaw(32) // 256 бит энтропии
