@@ -31,6 +31,7 @@ type AuthStatus struct {
 
 type RegisterReq struct {
 	Password string `json:"password" binding:"required,min=8"`
+	Mail     string `json:"mail"`
 }
 
 type RegisterResp struct {

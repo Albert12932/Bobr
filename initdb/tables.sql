@@ -6,7 +6,8 @@ CREATE TABLE users (
                        middle_name text not null,
                        birth_date date,
                        student_group text not null,
-                       password bytea
+                       password bytea,
+                    mail text not null
 );
 CREATE TABLE students (
                           id serial primary key,

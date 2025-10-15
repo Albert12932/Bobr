@@ -17,11 +17,13 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		var AuthCheck models.Auth
 		var CurStudent models.Student
 
+		// Берем номер студенческого из тела запроса
 		if err := c.ShouldBindJSON(&AuthCheck); err != nil {
-			c.JSON(http.StatusBadRequest, models.ErrorResponse{
-				Error:   "Error while BindJSON",
-				Message: err.Error(),
-			})
+			c.JSON(http.StatusBadRequest,
+				models.ErrorResponse{
+					Error:   "Error while BindJSON",
+					Message: err.Error(),
+				})
 			return
 		}
 
@@ -29,6 +31,7 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		defer cancelStud()
 
+		// Получаем все данные студента
 		err := pool.QueryRow(ctxStud, `SELECT id, book_id, surname, name, middle_name, birth_date, "student_group"
 			   FROM students WHERE book_id = $1`,
 			AuthCheck.Book_id,
@@ -42,16 +45,18 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			&CurStudent.Group,
 		)
 		if err != nil {
-			if errors.Is(err, pgx.ErrNoRows) { // Если зачетки нет
+			if errors.Is(err, pgx.ErrNoRows) { // Если студенческого нет
 				c.JSON(http.StatusNotFound, gin.H{"ok": "false"})
 				return
 			}
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{ // Ошибка при поиске зачетки
-				Error:   "Error while checking student book_id",
-				Message: err.Error()})
+			c.JSON(http.StatusInternalServerError,
+				models.ErrorResponse{
+					Error:   "Error while checking student book_id",
+					Message: err.Error()})
 			return
 		}
 
+		// Проверяем, есть ли пользователь с таким номером студенческого
 		ctxUser, cancelUser := context.WithTimeout(c.Request.Context(), 3*time.Second)
 		defer cancelUser()
 		var exists bool
@@ -68,9 +73,11 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 		if exists {
 			// Уже зарегистрирован
-			c.JSON(http.StatusConflict, gin.H{"ok": "false", "status": "Зачетка уже используется"})
+			c.JSON(http.StatusConflict, gin.H{"ok": "false", "status": "Студенческий уже используется"})
 			return
 		}
+
+		// Генерируем токен для регистрации
 		rawToken, err := helpers.GenerateTokenRaw(32) // 256 бит энтропии
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -79,14 +86,18 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			})
 			return
 		}
+
 		tokenHash := helpers.HashToken(rawToken)
 		expiresAt := time.Now().Add(helpers.LinkTokenTTL)
+
+		// Создаем транзакцию для создания токена и добавления его в бд
 		tx, err := pool.BeginTx(ctxUser, pgx.TxOptions{})
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-				Error:   "Error while creating transaction",
-				Message: err.Error(),
-			})
+			c.JSON(http.StatusInternalServerError,
+				models.ErrorResponse{
+					Error:   "Error while creating transaction",
+					Message: err.Error(),
+				})
 			return
 		}
 		defer func() { _ = tx.Rollback(ctxUser) }()
@@ -101,17 +112,21 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		`, AuthCheck.Book_id, tokenHash, expiresAt)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-				Error:   "Error while updating token information",
-				Message: err.Error(),
-			})
+			c.JSON(http.StatusInternalServerError,
+				models.ErrorResponse{
+					Error:   "Error while updating token information",
+					Message: err.Error(),
+				})
 			return
 		}
+
+		// Коммитим транзакцию
 		if err := tx.Commit(ctxUser); err != nil {
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-				Error:   "Error while commiting transaction",
-				Message: err.Error(),
-			})
+			c.JSON(http.StatusInternalServerError,
+				models.ErrorResponse{
+					Error:   "Error while commiting transaction",
+					Message: err.Error(),
+				})
 			return
 		}
 		// 4) Отдаём "free" + сам token и TTL (в секундах)
