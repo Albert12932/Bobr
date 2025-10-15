@@ -53,6 +53,7 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 				models.ErrorResponse{
 					Error:   "Error with mail",
 					Message: "Wrong mail"})
+			return
 		}
 
 		// Создаем контекст с 5-секундным таймаутом
