@@ -6,7 +6,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
+	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -47,8 +47,8 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 			return
 		}
 
-		// Проверяем, что в почте есть знак @
-		if !strings.Contains(body.Mail, "@") {
+		validMail := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`).MatchString(body.Mail)
+		if !validMail {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
 					Error:   "Error with mail",
