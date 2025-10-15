@@ -11,9 +11,9 @@
 4||10|c|G
 4||10|C|G
 4||10|T|G</Grants>
-      <IntrospectionStateNumber>779</IntrospectionStateNumber>
+      <IntrospectionStateNumber>752</IntrospectionStateNumber>
       <ServerVersion>16.10</ServerVersion>
-      <StartupTime>1759951553</StartupTime>
+      <StartupTime>1760560693</StartupTime>
       <TimeZones>true ACDT
 true ACSST
 false ACST
@@ -707,7 +707,7 @@ true posixrules
 13276||10|C|G
 13276||-9223372036854775808|U|G
 13276||10|U|G</Grants>
-      <IntrospectionStateNumber>779</IntrospectionStateNumber>
+      <IntrospectionStateNumber>752</IntrospectionStateNumber>
       <ObjectId>16384</ObjectId>
       <OwnerName>admin</OwnerName>
     </database>
@@ -4131,8 +4131,8 @@ true posixrules
     <schema id="264" parent="2" name="public">
       <Comment>standard public schema</Comment>
       <Current>1</Current>
-      <IntrospectionStateNumber>779</IntrospectionStateNumber>
-      <LastIntrospectionLocalTimestamp>2025-10-15.20:11:48</LastIntrospectionLocalTimestamp>
+      <IntrospectionStateNumber>752</IntrospectionStateNumber>
+      <LastIntrospectionLocalTimestamp>2025-10-15.20:58:38</LastIntrospectionLocalTimestamp>
       <ObjectId>2200</ObjectId>
       <StateNumber>524</StateNumber>
       <OwnerName>pg_database_owner</OwnerName>
@@ -4451,7 +4451,14 @@ true posixrules
       <StoredType>bytea|0s</StoredType>
       <TypeId>17</TypeId>
     </column>
-    <index id="308" parent="271" name="users_pkey">
+    <column id="308" parent="271" name="mail">
+      <NotNull>1</NotNull>
+      <Position>9</Position>
+      <StateNumber>732</StateNumber>
+      <StoredType>text|0s</StoredType>
+      <TypeId>25</TypeId>
+    </column>
+    <index id="309" parent="271" name="users_pkey">
       <ColNames>id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>16392</ObjectId>
@@ -4460,7 +4467,7 @@ true posixrules
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <index id="309" parent="271" name="users_book_id_key">
+    <index id="310" parent="271" name="users_book_id_key">
       <ColNames>book_id</ColNames>
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>16394</ObjectId>
@@ -4468,14 +4475,14 @@ true posixrules
       <Unique>1</Unique>
       <AccessMethodId>403</AccessMethodId>
     </index>
-    <key id="310" parent="271" name="users_pkey">
+    <key id="311" parent="271" name="users_pkey">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>16393</ObjectId>
       <Primary>1</Primary>
       <StateNumber>732</StateNumber>
       <UnderlyingIndexId>16392</UnderlyingIndexId>
     </key>
-    <key id="311" parent="271" name="users_book_id_key">
+    <key id="312" parent="271" name="users_book_id_key">
       <NameSurrogate>1</NameSurrogate>
       <ObjectId>16395</ObjectId>
       <StateNumber>732</StateNumber>

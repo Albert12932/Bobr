@@ -29,17 +29,22 @@ type AuthStatus struct {
 	Link_token_ttl_sec int    `json:"link_token_ttl_sec"`
 }
 
-type RegisterReq struct {
+type AuthReq struct {
 	Password string `json:"password" binding:"required,min=8"`
 	Mail     string `json:"mail"`
 }
 
-type RegisterResp struct {
+type LoginRequest struct {
+	Book_id  int    `json:"book_id" binding:"required"`
+	Password string `json:"password" binding:"required"`
+}
+
+type AuthResp struct {
 	OK   bool `json:"ok"`
 	User struct {
 		ID        int64  `json:"id"`
 		FirstName string `json:"first_name"`
-		LastName  string `json:"last_name"`
+		Surname   string `json:"surname"`
 	} `json:"user"`
 	Session struct {
 		Auth struct {

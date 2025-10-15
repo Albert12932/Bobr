@@ -10,4 +10,5 @@ import (
 func AuthRoutes(r *gin.Engine, db *pgxpool.Pool, jwtMaker *helpers.JWTMaker) {
 	r.POST("/auth/check", controllers.AuthCheck(db))
 	r.POST("/auth/:token", controllers.RegisterByToken(db, jwtMaker))
+	r.POST("auth/login", controllers.Login(db, jwtMaker))
 }

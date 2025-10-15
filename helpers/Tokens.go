@@ -37,14 +37,14 @@ func NewJWTMaker(secret []byte, lifetime time.Duration) *JWTMaker {
 	return &JWTMaker{secret: secret, lifetime: lifetime}
 }
 
-func (m *JWTMaker) Issue(userID int64, bookID int, firstName, lastName string) (token string, exp time.Time, err error) {
+func (m *JWTMaker) Issue(userID int64, bookID int, firstName, surname string) (token string, exp time.Time, err error) {
 	exp = time.Now().Add(m.lifetime)
 
 	claims := jwt.MapClaims{
 		"sub":       userID, // кто
 		"book_id":   bookID,
 		"firstName": firstName,
-		"lastName":  lastName,
+		"surname":   surname,
 		"exp":       exp.Unix(), // срок
 		"iat":       time.Now().Unix(),
 	}

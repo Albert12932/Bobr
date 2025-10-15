@@ -29,7 +29,7 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		}
 
 		// Берем пароль и почту из тела запроса в json
-		var body models.RegisterReq
+		var body models.AuthReq
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
@@ -113,14 +113,14 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 
 		// Создаем переменные для взятия из students и последующей вставки в users
 		var (
-			firstName, lastName, middleName, studentGroup string
-			birth_date                                    time.Time
+			firstName, surname, middleName, studentGroup string
+			birth_date                                   time.Time
 		)
 		err = tx.QueryRow(ctx, `
 			SELECT name, surname, middle_name, student_group, birth_date
 			FROM students
 			WHERE book_id = $1
-		`, bookID).Scan(&firstName, &lastName, &middleName, &studentGroup, &birth_date)
+		`, bookID).Scan(&firstName, &surname, &middleName, &studentGroup, &birth_date)
 
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -153,7 +153,7 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password, mail)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			RETURNING id
-		`, bookID, firstName, lastName, middleName, studentGroup, birth_date, (hash), body.Mail).Scan(&userID)
+		`, bookID, firstName, surname, middleName, studentGroup, birth_date, (hash), body.Mail).Scan(&userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
@@ -172,18 +172,18 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		}
 
 		// Выдаём JWT токен
-		accessToken, exp, err := jwtMaker.Issue(userID, bookID, firstName, lastName)
+		accessToken, exp, err := jwtMaker.Issue(userID, bookID, firstName, surname)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Error while jwt", Message: err.Error()})
 			return
 		}
 
 		// Выдаем ответ в нужном формате
-		var resp models.RegisterResp
+		var resp models.AuthResp
 		resp.OK = true
 		resp.User.ID = userID
 		resp.User.FirstName = firstName
-		resp.User.LastName = lastName
+		resp.User.Surname = surname
 		resp.Session.Auth.Token = accessToken
 		resp.Session.Auth.ExpiresAt = exp
 
