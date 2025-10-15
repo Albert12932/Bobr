@@ -15,6 +15,8 @@ import (
 
 func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 	return func(c *gin.Context) {
+
+		// Берем модель (студенческий, пароль) из тела запроса
 		var loginData models.LoginRequest
 		if err := c.ShouldBindJSON(&loginData); err != nil {
 			c.JSON(http.StatusBadRequest,
@@ -35,7 +37,7 @@ func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 			surname  string
 			password string
 		)
-
+		// Получаем инфу о студенте
 		err := pool.QueryRow(ctx, `
 		SELECT id, book_id, name, surname, password
 		FROM users
@@ -56,6 +58,7 @@ func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 			})
 			return
 		}
+		// Сверяем пароль из тела запроса и из бд
 		if err := bcrypt.CompareHashAndPassword([]byte(password), []byte(loginData.Password)); err != nil {
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
 				Error:   "Error while comparing passwordhash",
@@ -63,7 +66,7 @@ func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 			})
 			return
 		}
-
+		// Создаем токен
 		accessToken, exp, err := jwtMaker.Issue(id, book_id, name, surname)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
@@ -72,7 +75,7 @@ func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 			})
 			return
 		}
-
+		// Возвращаем токен + ответ
 		var resp models.AuthResp
 		resp.OK = true
 		resp.User.ID = id
