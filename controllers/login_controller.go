@@ -35,7 +35,7 @@ func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 			book_id  int
 			name     string
 			surname  string
-			password string
+			password []byte
 		)
 		// Получаем инфу о студенте
 		err := pool.QueryRow(ctx, `
