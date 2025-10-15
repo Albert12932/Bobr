@@ -152,7 +152,7 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password, mail)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 			RETURNING id
-		`, bookID, firstName, lastName, middleName, studentGroup, birth_date, (hash), mail).Scan(&userID)
+		`, bookID, firstName, lastName, middleName, studentGroup, birth_date, (hash), body.Mail).Scan(&userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{

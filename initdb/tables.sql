@@ -7,7 +7,7 @@ CREATE TABLE users (
                        birth_date date,
                        student_group text not null,
                        password bytea,
-                    mail text not null
+                       mail text not null
 );
 CREATE TABLE students (
                           id serial primary key,
