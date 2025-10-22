@@ -8,6 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"log"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 )
 
@@ -42,8 +44,13 @@ func main() {
 		}
 	}()
 
+	// Канал для получения сигналов ОС
 	quit := make(chan os.Signal, 1)
+	// Регистрируем интересующие сигналы
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
+	// Блокируем основную горутину, пока не получим сигнал
 	<-quit
+	log.Println("Shutting down server...")
 
 }
