@@ -32,5 +32,5 @@ go.work.sum
 .gitignore
 
 # Editor/IDE
-# .idea/
+.idea/
 # .vscode/
