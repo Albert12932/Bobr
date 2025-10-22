@@ -42,4 +42,8 @@ func main() {
 		}
 	}()
 
+	quit := make(chan os.Signal, 1)
+
+	<-quit
+
 }
