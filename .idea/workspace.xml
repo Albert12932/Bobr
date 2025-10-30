@@ -5,7 +5,26 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="458dd89f-3eed-4fe7-af53-edc7f5958710" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/pkg/api/routes/auth_routes.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources.local.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources.local.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1/storage_v2/_src_/database/bobriki.CgUnAw/schema/information_schema.FNRwLQ.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1/storage_v2/_src_/database/bobriki.CgUnAw/schema/information_schema.FNRwLQ.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1/storage_v2/_src_/database/bobriki.CgUnAw/schema/pg_catalog.0S1ZNQ.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1/storage_v2/_src_/database/bobriki.CgUnAw/schema/pg_catalog.0S1ZNQ.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1/storage_v2/_src_/database/bobriki.CgUnAw/schema/public.abK9xQ.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1/storage_v2/_src_/database/bobriki.CgUnAw/schema/public.abK9xQ.meta" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1/storage_v2/_src_/database/postgres.edMnLQ/schema/public.abK9xQ.meta" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dataSources/b74ebaf6-e760-4c44-84b5-59985404fdf1/storage_v2/_src_/database/postgres.edMnLQ/schema/public.abK9xQ.meta" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Caddyfile" beforeDir="false" afterPath="$PROJECT_DIR$/build/Caddyfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Dockerfile" beforeDir="false" afterPath="$PROJECT_DIR$/build/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/config/database.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/config/database.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/auth_controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/api/controllers/auth_controller.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/login_controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/api/controllers/login_controller.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/controllers/register_controller.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/api/controllers/register_controller.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docker-compose.yml" beforeDir="false" afterPath="$PROJECT_DIR$/docker-compose.yml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/helpers/Tokens.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/helpers/Tokens.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initdb/tables.sql" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/migrations/tables.sql" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/main.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/server/main.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/models/models.go" beforeDir="false" afterPath="$PROJECT_DIR$/pkg/models/models.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/routes/auth_routes.go" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,6 +57,10 @@
   <component name="GoLibraries">
     <option name="indexEntireGoPath" value="true" />
   </component>
+  <component name="KubernetesApiPersistence">{}</component>
+  <component name="KubernetesApiProvider">{
+  &quot;isMigrated&quot;: true
+}</component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 5
 }</component>
@@ -57,7 +80,7 @@
     "git-widget-placeholder": "main",
     "go.import.settings.migrated": "true",
     "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "C:/Users/shoma/GolandProjects/bdstudy",
+    "last_opened_file_path": "C:/Users/shoma/GolandProjects/weather-service",
     "node.js.detected.package.eslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
@@ -71,7 +94,11 @@
 }]]></component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\shoma\GolandProjects\bobri\initdb" />
+      <recent name="C:\Users\shoma\GolandProjects\bobri\pkg" />
+      <recent name="C:\Users\shoma\GolandProjects\bobri\build" />
+      <recent name="C:\Users\shoma\GolandProjects\bobri\pkg\api\migrations" />
+      <recent name="C:\Users\shoma\GolandProjects\bobri\pkg\api\helpers" />
+      <recent name="C:\Users\shoma\GolandProjects\bobri\pkg\api" />
     </key>
   </component>
   <component name="SharedIndexes">

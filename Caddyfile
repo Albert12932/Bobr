@@ -1,9 +1,0 @@
-beavers.althgamer.ru {
-    encode gzip
-    reverse_proxy app:8080
-
-    header {
-        X-Forwarded-Proto {scheme}
-        X-Real-IP {remote_host}
-    }
-}
