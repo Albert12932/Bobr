@@ -22,8 +22,8 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&AuthCheck); err != nil {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
-					Error:   "Error while BindJSON",
-					Message: err.Error(),
+					Error:   err.Error(),
+					Message: "Не получилось получить номер студенческого из тела запроса",
 				})
 			return
 		}
@@ -47,13 +47,16 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) { // Если студенческого нет
-				c.JSON(http.StatusNotFound, gin.H{"ok": "false"})
+				c.JSON(http.StatusNotFound, models.ErrorResponse{
+					Error:   pgx.ErrNoRows.Error(),
+					Message: "Студенческого с таким номером не найдено",
+				})
 				return
 			}
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "Error while checking student book_id",
-					Message: err.Error()})
+					Error:   err.Error(),
+					Message: "Error while checking student book_id"})
 			return
 		}
 
@@ -67,14 +70,17 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		).Scan(&exists)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-				Error:   "Error while checking if user exists",
-				Message: err.Error(),
+				Error:   err.Error(),
+				Message: "Error while checking if user exists",
 			})
 			return
 		}
 		if exists {
 			// Уже зарегистрирован
-			c.JSON(http.StatusConflict, gin.H{"ok": "false", "status": "Студенческий уже используется"})
+			c.JSON(http.StatusConflict, models.ErrorResponse{
+				Error:   "User already registered",
+				Message: "Пользователь с таким номером студенческого уже зарегистрирован",
+			})
 			return
 		}
 
@@ -82,8 +88,8 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		rawToken, err := helpers.GenerateTokenRaw(32) // 256 бит энтропии
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-				Error:   "Error while generating token",
-				Message: err.Error(),
+				Error:   err.Error(),
+				Message: "Error while generating token",
 			})
 			return
 		}
@@ -96,8 +102,8 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "Error while creating transaction",
-					Message: err.Error(),
+					Error:   err.Error(),
+					Message: "Error while creating transaction",
 				})
 			return
 		}
@@ -115,8 +121,8 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "Error while updating token information",
-					Message: err.Error(),
+					Error:   err.Error(),
+					Message: "Error while updating token information",
 				})
 			return
 		}
@@ -125,8 +131,8 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 		if err := tx.Commit(ctxUser); err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "Error while commiting transaction",
-					Message: err.Error(),
+					Error:   err.Error(),
+					Message: "Error while commiting transaction",
 				})
 			return
 		}

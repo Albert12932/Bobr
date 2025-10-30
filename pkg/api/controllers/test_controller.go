@@ -15,8 +15,8 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 		if err := c.ShouldBindJSON(&userData); err != nil {
 			c.JSON(400, models.ErrorResponse{
-				Error:   "Error while marshaling JSON",
-				Message: err.Error(),
+				Error:   err.Error(),
+				Message: "Error while marshaling JSON",
 			})
 			return
 		}
@@ -25,15 +25,15 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE book_id = $1", userData.BookId)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
-				Error:   "Error while deleting user",
-				Message: err.Error(),
+				Error:   err.Error(),
+				Message: "Error while deleting user",
 			})
 			return
 		}
 		if tag.RowsAffected() == 0 {
 			c.JSON(404, models.ErrorResponse{
 				Error:   "User not found",
-				Message: "No user with the given book_id",
+				Message: "Не удалось найти пользователя с таким студенческим",
 			})
 			return
 		}
@@ -45,7 +45,7 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 
 func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var users []models.Student
+		var students []models.Student
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
@@ -54,20 +54,55 @@ func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
 		rows, err := pool.Query(ctx, "select id, book_id, surname, name, middle_name, birth_date, student_group from students")
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
-				Error:   "Error while querying students",
-				Message: err.Error(),
+				Error:   err.Error(),
+				Message: "Error while querying students",
 			})
 			return
 		}
 		defer rows.Close()
 
 		for rows.Next() {
-			var user models.Student
-			err := rows.Scan(&user.Id, &user.BookId, &user.Surname, &user.Name, &user.MiddleName, &user.BirthDate, &user.Group)
+			var student models.Student
+			err := rows.Scan(&student.Id, &student.BookId, &student.Surname, &student.Name, &student.MiddleName, &student.BirthDate, &student.Group)
 			if err != nil {
 				c.JSON(500, models.ErrorResponse{
-					Error:   "Error while scanning student row",
-					Message: err.Error(),
+					Error:   err.Error(),
+					Message: "Error while scanning student row",
+				})
+				return
+			}
+			students = append(students, student)
+		}
+		c.JSON(200, students)
+		return
+	}
+
+}
+func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var users []models.User
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+		defer cancel()
+
+		rows, err := pool.Query(ctx, "select id, book_id, surname, name, middle_name, birth_date, student_group, password, mail from users")
+		if err != nil {
+			c.JSON(500, models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Error while querying students",
+			})
+			return
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var user models.User
+			err := rows.Scan(&user.Id, &user.BookId, &user.Surname, &user.Name, &user.MiddleName, &user.BirthDate, &user.Group, &user.Password, &user.Mail)
+			if err != nil {
+				c.JSON(500, models.ErrorResponse{
+					Error:   err.Error(),
+					Message: "Error while scanning user row",
 				})
 				return
 			}
