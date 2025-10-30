@@ -11,6 +11,7 @@ func AuthRoutes(r *gin.Engine, db *pgxpool.Pool, jwtMaker *helpers.JWTMaker) {
 	r.POST("/auth/check", controllers.AuthCheck(db))
 	r.POST("/auth/:token", controllers.RegisterByToken(db, jwtMaker))
 	r.POST("/auth/login", controllers.Login(db, jwtMaker))
-	r.DELETE("/auth/deleteUser", controllers.DeleteUser(db))
-	r.GET("/auth/students", controllers.GetStudents(db))
+	r.DELETE("/helper/deleteUser", controllers.DeleteUser(db))
+	r.GET("/helper/students", controllers.GetStudents(db))
+	r.GET("/helper/users", controllers.GetUsers(db))
 }

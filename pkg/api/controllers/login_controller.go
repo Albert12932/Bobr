@@ -21,8 +21,8 @@ func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 		if err := c.ShouldBindJSON(&loginData); err != nil {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
-					Error:   "Error while marshaling JSON",
-					Message: err.Error(),
+					Error:   err.Error(),
+					Message: "Не удалось получить студенческий и пароль тела запроса",
 				})
 			return
 		}
@@ -37,7 +37,7 @@ func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 			surname  string
 			password []byte
 		)
-		// Получаем инфу о студенте
+		// Получаем инфу о пользователе
 		err := pool.QueryRow(ctx, `
 		SELECT id, book_id, name, surname, password
 		FROM users
@@ -47,22 +47,22 @@ func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.JSON(http.StatusUnauthorized, models.ErrorResponse{
-					Error:   "Error while getting user info",
-					Message: "Wrong book_id",
+					Error:   "Wrong book_id",
+					Message: "Не удалось найти пользователя с таким студенческим",
 				})
 				return
 			}
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
-				Error:   "Error while getting user info",
-				Message: err.Error(),
+				Error:   err.Error(),
+				Message: "Error while getting user info",
 			})
 			return
 		}
 		// Сверяем пароль из тела запроса и из бд
 		if err := bcrypt.CompareHashAndPassword(password, []byte(loginData.Password)); err != nil {
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
-				Error:   "Error while comparing password hash",
-				Message: err.Error(),
+				Error:   err.Error(),
+				Message: "Неправильный пароль",
 			})
 			return
 		}
@@ -70,8 +70,8 @@ func Login(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 		accessToken, exp, err := jwtMaker.Issue(id, bookId, name, surname)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error":   "JWT_ERROR",
-				"message": err.Error(),
+				"error":   err.Error(),
+				"message": "JWT_ERROR",
 			})
 			return
 		}

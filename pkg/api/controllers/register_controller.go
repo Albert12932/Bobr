@@ -24,7 +24,7 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
 					Error:   "Error while getting token from path",
-					Message: "Token not found"})
+					Message: "Не удалось прочитать токен из пути запроса"})
 			return
 		}
 
@@ -33,8 +33,8 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
-					Error:   "Error while marshaling JSON",
-					Message: err.Error()})
+					Error:   err.Error(),
+					Message: "Неверный формат тела запроса"})
 			return
 		}
 
@@ -42,8 +42,8 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		if len(body.Password) < 8 {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
-					Error:   "Error while creating password",
-					Message: "Weak password"})
+					Error:   "Weak password",
+					Message: "Пароль должен быть не менее 8 символов"})
 			return
 		}
 
@@ -51,8 +51,8 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		if !validMail {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
-					Error:   "Error with mail",
-					Message: "Wrong mail"})
+					Error:   "Wrong mail",
+					Message: "Неправильный формат почты"})
 			return
 		}
 
@@ -65,8 +65,8 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "Error while creating transaction",
-					Message: err.Error()})
+					Error:   err.Error(),
+					Message: "Error while creating transaction"})
 			return
 		}
 
@@ -82,15 +82,15 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.JSON(http.StatusUnauthorized,
 					models.ErrorResponse{
-						Error:   "INVALID_OR_EXPIRED_TOKEN",
+						Error:   err.Error(),
 						Message: "Token не найден или истёк",
 					})
 				return
 			}
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "DATABASE_ERROR",
-					Message: err.Error()})
+					Error:   err.Error(),
+					Message: "DATABASE_ERROR"})
 			return
 		}
 
@@ -99,15 +99,15 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE book_id = $1)`, bookID).Scan(&exists); err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "Error while checking if user exists",
-					Message: err.Error()})
+					Error:   err.Error(),
+					Message: "Error while checking existing user"})
 			return
 		}
 		if exists {
 			c.JSON(http.StatusConflict,
 				models.ErrorResponse{
 					Error:   "Error while creating user",
-					Message: "user exists"})
+					Message: "Пользователь уже существует"})
 			return
 		}
 
@@ -127,7 +127,7 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 				c.JSON(http.StatusNotFound,
 					models.ErrorResponse{
 						Error:   "No rows while getting student info",
-						Message: "No rows"})
+						Message: "Не удалось получить данные о студенте"})
 				return
 			}
 			c.JSON(http.StatusInternalServerError,
@@ -142,8 +142,8 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "Error while hashing password",
-					Message: err.Error()})
+					Error:   err.Error(),
+					Message: "Error while hashing password"})
 			return
 		}
 
@@ -157,8 +157,8 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "Error while inserting user info",
-					Message: err.Error()})
+					Error:   err.Error(),
+					Message: "Error while inserting user info"})
 			return
 		}
 
@@ -166,8 +166,8 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		if err := tx.Commit(ctx); err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
-					Error:   "Error while commiting transaction",
-					Message: err.Error()})
+					Error:   err.Error(),
+					Message: "Error while commiting transaction"})
 			return
 		}
 

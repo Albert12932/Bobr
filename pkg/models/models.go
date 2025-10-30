@@ -21,6 +21,18 @@ type Student struct {
 	Group      string    `json:"group"`
 }
 
+type User struct {
+	Id         int       `json:"id"`
+	BookId     int       `json:"book_id"`
+	Surname    string    `json:"surname"`
+	Name       string    `json:"name"`
+	MiddleName string    `json:"middle_name"`
+	BirthDate  time.Time `json:"birth_date"`
+	Group      string    `json:"group"`
+	Password   []byte    `json:"password"`
+	Mail       string    `json:"mail"`
+}
+
 type AuthStatus struct {
 	Status          string `json:"status"`
 	DisplayName     string `json:"display_name"`
@@ -30,7 +42,7 @@ type AuthStatus struct {
 }
 
 type AuthReq struct {
-	Password string `json:"password" binding:"required,min=8"`
+	Password string `json:"password"`
 	Mail     string `json:"mail"`
 }
 
