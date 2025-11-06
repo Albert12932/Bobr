@@ -57,6 +57,7 @@ func (m *JWTMaker) Verify(token string) (jwt.MapClaims, error) {
 	if !t.Valid {
 		return nil, jwt.ErrTokenInvalidClaims
 	}
+
 	return t.Claims.(jwt.MapClaims), nil
 }
 

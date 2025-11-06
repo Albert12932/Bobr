@@ -3,6 +3,7 @@ package middleware
 import (
 	"bobri/internal/models"
 	"bobri/pkg/helpers"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
@@ -25,7 +26,8 @@ func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker) gin.HandlerFunc 
 		tokenString := strings.Split(authHeader, "Bearer ")[1]
 
 		// Валидируем JWT токен
-		_, err := accessJwtMaker.Verify(tokenString)
+		claims, err := accessJwtMaker.Verify(tokenString)
+
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, models.ErrorResponse{
 				Error:   err.Error(),
@@ -34,7 +36,36 @@ func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker) gin.HandlerFunc 
 			return
 		}
 
-		// Продолжаем, если токен валиден
+		// Просто создаем вашу модель прямо здесь
+		payload := &models.Payload{}
+
+		// Заполняем поля если они есть в claims
+		if sub, ok := claims["sub"].(float64); ok {
+			payload.Sub = int64(sub)
+		}
+
+		if exp, ok := claims["exp"].(float64); ok {
+			payload.Exp = int64(exp)
+		}
+
+		if iat, ok := claims["iat"].(float64); ok {
+			payload.Iat = int64(iat)
+		}
+
+		fmt.Println(payload)
+
+		fmt.Printf("sub: %v (type: %T)\n", claims["sub"], claims["sub"])
+		fmt.Printf("exp: %v (type: %T)\n", claims["exp"], claims["exp"])
+		fmt.Printf("iat: %v (type: %T)\n", claims["iat"], claims["iat"])
+
+		// Преобразование
+		if sub, ok := claims["sub"].(float64); ok {
+			payload.Sub = int64(sub)
+			fmt.Printf("Converted sub: %d\n", payload.Sub)
+		}
+
+		// Сохраняем payload в модель и продолжаем, если токен валиден
+		c.Set("userPayload", payload)
 		c.Next()
 	}
 }

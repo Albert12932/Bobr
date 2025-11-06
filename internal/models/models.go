@@ -112,3 +112,9 @@ type SetNewPasswordResponse struct {
 	OK      bool   `json:"ok"`
 	Message string `json:"message"`
 }
+
+type Payload struct {
+	Sub int64 `json:"sub"`
+	Exp int64 `json:"exp"`
+	Iat int64 `json:"iat"`
+}

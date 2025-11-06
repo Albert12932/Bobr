@@ -3,8 +3,10 @@ package controllers
 import (
 	"bobri/internal/models"
 	"context"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"net/http"
 	"time"
 )
 
@@ -69,6 +71,25 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var students []models.Student
+
+		// Пытаемся получить payload из JWT Токена
+		payloadInterface, exists := c.Get("userPayload")
+		if !exists {
+			c.JSON(http.StatusInternalServerError,
+				models.ErrorResponse{
+					Error:   "Payload doesn't exist",
+					Message: "Данные о пользователе в JWT Токене (Payload) не найдены",
+				})
+			return
+		}
+
+		// Преобразуем payload в наш тип
+		payload := payloadInterface.(*models.Payload)
+
+		// Используем данные из payload
+		fmt.Printf("User ID: %d\n", payload.Sub)
+		fmt.Printf("Expires at: %d\n", payload.Exp)
+		fmt.Printf("Expires at: %d\n", payload.Iat)
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
