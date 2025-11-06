@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "bobri/docs"
 	"bobri/pkg/api/routes"
 	"bobri/pkg/config"
 	"bobri/pkg/helpers"
@@ -24,9 +25,9 @@ func main() {
 	if secret == "" {
 		log.Fatal("JWT_SECRET not set")
 	}
-	jwtMaker := helpers.NewJWTMaker([]byte(secret), 24*time.Hour)
+	AccessJwtMaker := helpers.NewJWTMaker([]byte(secret), 30*time.Minute)
 
-	routes.AuthRoutes(engine, db, jwtMaker)
+	routes.AuthRoutes(engine, db, AccessJwtMaker)
 
 	if err := engine.Run(":8080"); err != nil {
 		log.Fatalf("Error while starting server: %v", err)

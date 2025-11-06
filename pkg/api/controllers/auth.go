@@ -12,10 +12,24 @@ import (
 	"time"
 )
 
+// AuthCheck @Summary      Проверка студенческого в системе
+// @Description  Проверяет наличие студенческого билета в системе.
+// @Description  Если студент не зарегистрирован, генерирует временный токен для регистрации.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        input  body  models.AuthBookRequest  true  "Номер студенческого билета"
+// @Success      200  {object}  models.AuthStatus    "Студенческий найден, выдан регистрационный токен" example({"status":"free","display_name":"Иван","group":"ШАД-111", "LinkToken":"raw_token_string","LinkTokenTtlSec":300})
+// @Failure      400  {object}  models.ErrorResponse "Некорректный запрос — ошибка парсинга JSON"
+// @Failure      404  {object}  models.ErrorResponse "Студенческий не найден в базе"
+// @Failure      409  {object}  models.ErrorResponse "Пользователь с таким номером уже зарегистрирован"
+// @Failure      500  {object}  models.ErrorResponse "Ошибка при работе с базой данных"
+// @Failure      500  {object}  models.ErrorResponse "Ошибка при генерации или сохранении токена"
+// @Router       /auth/check [post]
 func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		var AuthCheck models.Auth
+		var AuthCheck models.AuthBookRequest
 		var CurStudent models.Student
 
 		// Берем номер студенческого из тела запроса
@@ -56,7 +70,7 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
 					Error:   err.Error(),
-					Message: "Error while checking student book_id"})
+					Message: "Ошибка при получении данных студента"})
 			return
 		}
 

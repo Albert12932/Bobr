@@ -15,21 +15,24 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.HandlerFunc {
+// RegisterByToken @Summary      Регистрация пользователя по токену
+// @Description  Регистрирует нового пользователя на основе временного токена, выданного после проверки студенческого билета.
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        input  body  models.RegisterRequest  true  "Почта, пароль и токен регистрации пользователя"
+// @Success      200  {object}  models.RegisterResponse     "Успешная регистрация" example({"ok":true,"user":{"id":1,"first_name":"Иван","surname":"Иванов"}})
+// @Failure      400  {object}  models.ErrorResponse        "Некорректный запрос или формат данных"
+// @Failure      401  {object}  models.ErrorResponse        "Токен не найден или истёк"
+// @Failure      404  {object}  models.ErrorResponse        "Студент с такой почтой не найден"
+// @Failure      409  {object}  models.ErrorResponse        "Пользователь с такой почтой уже существует"
+// @Failure      500  {object}  models.ErrorResponse        "Ошибка сервера (база данных, хеширование, транзакция)"
+// @Router       /auth/register [post]
+func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		// Забираем и проверяем токен
-		rawToken := c.Param("token")
-		if rawToken == "" {
-			c.JSON(http.StatusBadRequest,
-				models.ErrorResponse{
-					Error:   "Error while getting token from path",
-					Message: "Не удалось прочитать токен из пути запроса"})
-			return
-		}
-
 		// Берем пароль и почту из тела запроса в json
-		var body models.AuthReq
+		var body models.RegisterRequest
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
@@ -56,6 +59,24 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 			return
 		}
 
+		var used bool
+		err := pool.QueryRow(c.Request.Context(),
+			`SELECT EXISTS(SELECT 1 FROM users WHERE mail = $1)`, body.Mail).Scan(&used)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError,
+				models.ErrorResponse{
+					Error:   err.Error(),
+					Message: "Ошибка при проверке почты"})
+			return
+		}
+		if used {
+			c.JSON(http.StatusConflict,
+				models.ErrorResponse{
+					Error:   "Mail already used",
+					Message: "Почта уже используется"})
+			return
+		}
+
 		// Создаем контекст с 5-секундным таймаутом
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
@@ -76,7 +97,7 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 		var bookID int
 		err = tx.QueryRow(ctx, `DELETE FROM link_tokens
        WHERE token_hash = $1 AND expires_at > now()
-       RETURNING book_id`, helpers.HashToken(rawToken)).Scan(&bookID)
+       RETURNING book_id`, helpers.HashToken(body.Token)).Scan(&bookID)
 
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -91,23 +112,6 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 				models.ErrorResponse{
 					Error:   err.Error(),
 					Message: "DATABASE_ERROR"})
-			return
-		}
-
-		// Проверяем не существует ли уже пользователь
-		var exists bool
-		if err := tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM users WHERE book_id = $1)`, bookID).Scan(&exists); err != nil {
-			c.JSON(http.StatusInternalServerError,
-				models.ErrorResponse{
-					Error:   err.Error(),
-					Message: "Error while checking existing user"})
-			return
-		}
-		if exists {
-			c.JSON(http.StatusConflict,
-				models.ErrorResponse{
-					Error:   "Error while creating user",
-					Message: "Пользователь уже существует"})
 			return
 		}
 
@@ -171,21 +175,12 @@ func RegisterByToken(pool *pgxpool.Pool, jwtMaker *helpers.JWTMaker) gin.Handler
 			return
 		}
 
-		// Выдаём JWT токен
-		accessToken, exp, err := jwtMaker.Issue(userID, bookID, firstName, surname)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{Error: "Error while jwt", Message: err.Error()})
-			return
-		}
-
 		// Выдаем ответ в нужном формате
-		var resp models.AuthResp
+		var resp models.RegisterResponse
 		resp.OK = true
 		resp.User.ID = userID
 		resp.User.FirstName = firstName
 		resp.User.Surname = surname
-		resp.Session.Auth.Token = accessToken
-		resp.Session.Auth.ExpiresAt = exp
 
 		// на всякий случай отключим кеш
 		c.Header("Cache-Control", "no-store")

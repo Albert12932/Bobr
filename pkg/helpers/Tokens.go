@@ -17,7 +17,6 @@ func GenerateTokenRaw(n int) (string, error) {
 	if _, err := rand.Read(b); err != nil {
 		return "", err
 	}
-	// URL-safe без '=' (короче и удобнее в ссылках)
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
@@ -35,22 +34,20 @@ func NewJWTMaker(secret []byte, lifetime time.Duration) *JWTMaker {
 	return &JWTMaker{secret: secret, lifetime: lifetime}
 }
 
-func (m *JWTMaker) Issue(userID int64, bookID int, firstName, surname string) (token string, exp time.Time, err error) {
+func (m *JWTMaker) Issue(userID int64) (token string, exp time.Time, err error) {
 	exp = time.Now().Add(m.lifetime)
 
 	claims := jwt.MapClaims{
-		"sub":       userID, // кто
-		"book_id":   bookID,
-		"firstName": firstName,
-		"surname":   surname,
-		"exp":       exp.Unix(), // срок
-		"iat":       time.Now().Unix(),
+		"sub": userID,     // кто
+		"exp": exp.Unix(), // срок
+		"iat": time.Now().Unix(),
 	}
 
 	j := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	token, err = j.SignedString(m.secret)
 	return
 }
+
 func (m *JWTMaker) Verify(ctx context.Context, token string) (jwt.MapClaims, error) {
 	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		return m.secret, nil
@@ -62,4 +59,8 @@ func (m *JWTMaker) Verify(ctx context.Context, token string) (jwt.MapClaims, err
 		return nil, jwt.ErrTokenInvalidClaims
 	}
 	return t.Claims.(jwt.MapClaims), nil
+}
+
+func NewRefreshToken() (string, error) {
+	return GenerateTokenRaw(32) // 256 бит энтропии
 }
