@@ -3,7 +3,11 @@ package models
 import "time"
 
 type AuthBookRequest struct {
-	BookId int `json:"book_id"`
+	BookId int64 `json:"book_id"`
+}
+
+type DeleteUserRequest struct {
+	Mail string `json:"mail"`
 }
 
 type ErrorResponse struct {
@@ -12,30 +16,31 @@ type ErrorResponse struct {
 }
 
 type DeleteUserResponse struct {
-	Deleted bool `json:"deleted"`
-	BookId  int  `json:"book_id"`
+	Deleted bool   `json:"deleted"`
+	Mail    string `json:"mail"`
 }
 
 type Student struct {
-	Id         int       `json:"id"`
-	BookId     int       `json:"book_id"`
+	Id         int64     `json:"id"`
+	BookId     int64     `json:"book_id"`
 	Surname    string    `json:"surname"`
 	Name       string    `json:"name"`
 	MiddleName string    `json:"middle_name"`
 	BirthDate  time.Time `json:"birth_date"`
-	Group      string    `json:"group"`
+	Group      string    `json:"group" db:"student_group"`
 }
 
 type User struct {
-	Id         int       `json:"id"`
-	BookId     int       `json:"book_id"`
+	Id         int64     `json:"id"`
+	BookId     int64     `json:"book_id"`
 	Surname    string    `json:"surname"`
 	Name       string    `json:"name"`
 	MiddleName string    `json:"middle_name"`
 	BirthDate  time.Time `json:"birth_date"`
-	Group      string    `json:"group"`
+	Group      string    `json:"student_group" db:"student_group"`
 	Password   []byte    `json:"password"`
 	Mail       string    `json:"mail"`
+	RoleLevel  int64     `json:"role_level"`
 }
 
 type AuthStatus struct {
@@ -43,7 +48,7 @@ type AuthStatus struct {
 	DisplayName     string `json:"display_name"`
 	Group           string `json:"group"`
 	LinkToken       string `json:"link_token"`
-	LinkTokenTtlSec int    `json:"link_token_ttl_sec"`
+	LinkTokenTtlSec int64  `json:"link_token_ttl_sec"`
 }
 
 type RegisterRequest struct {
@@ -62,12 +67,8 @@ type RefreshTokenRequest struct {
 }
 
 type RegisterResponse struct {
-	OK   bool `json:"ok"`
-	User struct {
-		ID        int64  `json:"id"`
-		FirstName string `json:"first_name"`
-		Surname   string `json:"surname"`
-	}
+	OK               bool `json:"ok"`
+	UserSubstructure `json:"user"`
 }
 
 type Session struct {
@@ -78,14 +79,16 @@ type Session struct {
 	} `json:"auth"`
 }
 
+type UserSubstructure struct {
+	ID        int64  `json:"id"`
+	BookId    int64  `json:"book_id"`
+	Mail      string `json:"mail"`
+	FirstName string `json:"first_name"`
+	RoleLevel int64  `json:"role_level"`
+}
 type LoginResponse struct {
-	User struct {
-		ID        int64  `json:"id"`
-		Mail      string `json:"mail"`
-		FirstName string `json:"first_name"`
-		Surname   string `json:"surname"`
-	} `json:"user"`
-	Session `json:"session"`
+	UserSubstructure `json:"user"`
+	Session          `json:"session"`
 }
 
 type RefreshTokenResponse struct {
@@ -111,4 +114,21 @@ type SetNewPasswordRequest struct {
 type SetNewPasswordResponse struct {
 	OK      bool   `json:"ok"`
 	Message string `json:"message"`
+}
+
+type Payload struct {
+	Sub       int64 `json:"sub"`
+	RoleLevel int64 `json:"role_level"`
+	Exp       int64 `json:"exp"`
+	Iat       int64 `json:"iat"`
+}
+
+type SetRoleRequest struct {
+	UserId    int64 `json:"user_id"`
+	RoleLevel int64 `json:"role_level"`
+}
+type SetRoleResponse struct {
+	Successful bool  `json:"successful"`
+	UserID     int64 `json:"user_id"`
+	RoleLevel  int64 `json:"role_level"`
 }

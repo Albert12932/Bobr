@@ -1,10 +1,11 @@
 package controllers
 
 import (
+	"bobri/internal/models"
 	"bobri/pkg/helpers"
-	"bobri/pkg/models"
 	"context"
 	"errors"
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -35,7 +36,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
 					Error:   err.Error(),
-					Message: "Не удалось получить студенческий и пароль тела запроса",
+					Message: "Не удалось получить почту и пароль из тела запроса",
 				})
 			return
 		}
@@ -45,19 +46,13 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		defer cancel()
 
 		// Получаем инфу о пользователе
-		var (
-			id       int64
-			bookId   int
-			name     string
-			surname  string
-			password []byte
-			mail     string
-		)
-		err := pool.QueryRow(ctx, `
-		SELECT id, book_id, name, surname, password, mail
+		var user models.User
+
+		err := pgxscan.Get(ctx, pool, &user, `
+		SELECT id, coalesce(book_id, 0) as book_id, name, surname, password, mail, role_level
 		FROM users
 		WHERE mail = $1
-		`, loginData.Mail).Scan(&id, &bookId, &name, &surname, &password, &mail)
+		`, loginData.Mail)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.JSON(http.StatusNotFound, models.ErrorResponse{
@@ -74,7 +69,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		}
 
 		// Сверяем пароль из тела запроса и из бд
-		if err := bcrypt.CompareHashAndPassword(password, []byte(loginData.Password)); err != nil {
+		if err := bcrypt.CompareHashAndPassword(user.Password, []byte(loginData.Password)); err != nil {
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
 				Error:   err.Error(),
 				Message: "Неправильный пароль",
@@ -83,7 +78,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		}
 
 		// Создаем access токен
-		accessToken, exp, err := AccessJwtMaker.Issue(id)
+		accessToken, exp, err := AccessJwtMaker.Issue(user.Id, user.RoleLevel)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error":   err.Error(),
@@ -96,7 +91,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		Tag, err := pool.Exec(ctx, `
 			DELETE FROM refresh_tokens
 			WHERE user_id = $1
-		`, id)
+		`, user.Id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
@@ -119,7 +114,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		Tag, err = pool.Exec(ctx, `
 			INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
 			VALUES ($1, $2, $3)
-		`, id, helpers.HashToken(refreshToken), time.Now().Add(30*24*time.Hour)) // 30 дней`)
+		`, user.Id, helpers.HashToken(refreshToken), time.Now().Add(30*24*time.Hour)) // 30 дней`)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
@@ -137,10 +132,11 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 
 		// Возвращаем токен + ответ
 		var resp models.LoginResponse
-		resp.User.ID = id
-		resp.User.Mail = mail
-		resp.User.FirstName = name
-		resp.User.Surname = surname
+		resp.UserSubstructure.ID = user.Id
+		resp.UserSubstructure.Mail = user.Mail
+		resp.UserSubstructure.BookId = user.BookId
+		resp.UserSubstructure.FirstName = user.Name
+		resp.UserSubstructure.RoleLevel = user.RoleLevel
 		resp.Session.Auth.AccessToken = accessToken
 		resp.Session.Auth.RefreshToken = refreshToken
 		resp.Session.Auth.ExpiresAt = exp
@@ -211,8 +207,22 @@ func RefreshToken(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.Hand
 			return
 		}
 
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		var roleLevel int64
+
+		err = pool.QueryRow(ctx, "SELECT role_level from users where id = $1", userId).Scan(&roleLevel)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Ошибка получения роли при обновлении AccessToken-а",
+			})
+			return
+		}
+
 		// Создаем новый access токен
-		accessToken, exp, err := AccessJwtMaker.Issue(userId)
+		accessToken, exp, err := AccessJwtMaker.Issue(userId, roleLevel)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error":   err.Error(),
@@ -232,7 +242,7 @@ func RefreshToken(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.Hand
 		}
 
 		// Обновляем refresh токен в бд
-		Tag, err := pool.Exec(c.Request.Context(), `
+		Tag, err := pool.Exec(ctx, `
 			UPDATE refresh_tokens
 			SET token_hash = $1, expires_at = $2
 			WHERE user_id = $3
@@ -256,6 +266,7 @@ func RefreshToken(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.Hand
 
 		// Возвращаем токены + ответ
 		var resp models.RefreshTokenResponse
+		resp.UserID = userId
 		resp.Auth.AccessToken = accessToken
 		resp.Auth.RefreshToken = newRefreshToken
 		resp.Auth.ExpiresAt = exp

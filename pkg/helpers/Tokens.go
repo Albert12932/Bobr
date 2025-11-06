@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -34,13 +33,14 @@ func NewJWTMaker(secret []byte, lifetime time.Duration) *JWTMaker {
 	return &JWTMaker{secret: secret, lifetime: lifetime}
 }
 
-func (m *JWTMaker) Issue(userID int64) (token string, exp time.Time, err error) {
+func (m *JWTMaker) Issue(userID, roleLevel int64) (token string, exp time.Time, err error) {
 	exp = time.Now().Add(m.lifetime)
 
 	claims := jwt.MapClaims{
-		"sub": userID,     // кто
-		"exp": exp.Unix(), // срок
-		"iat": time.Now().Unix(),
+		"sub":       userID, // кто
+		"roleLevel": roleLevel,
+		"exp":       exp.Unix(), // срок
+		"iat":       time.Now().Unix(),
 	}
 
 	j := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -48,7 +48,7 @@ func (m *JWTMaker) Issue(userID int64) (token string, exp time.Time, err error) 
 	return
 }
 
-func (m *JWTMaker) Verify(ctx context.Context, token string) (jwt.MapClaims, error) {
+func (m *JWTMaker) Verify(token string) (jwt.MapClaims, error) {
 	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		return m.secret, nil
 	})
@@ -58,6 +58,7 @@ func (m *JWTMaker) Verify(ctx context.Context, token string) (jwt.MapClaims, err
 	if !t.Valid {
 		return nil, jwt.ErrTokenInvalidClaims
 	}
+
 	return t.Claims.(jwt.MapClaims), nil
 }
 

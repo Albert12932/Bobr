@@ -1,8 +1,8 @@
 package controllers
 
 import (
+	"bobri/internal/models"
 	"bobri/pkg/helpers"
-	"bobri/pkg/models"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -92,7 +92,7 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		htmlBody := `
 			<h2>Здравствуйте!</h2>
-			<p>Вы запросили сброс пароля для своего аккаунта в системе <b>Bobri</b>.</p>
+			<p>Вы запросили сброс пароля для своего аккаунта в системе <b>Beaver</b>.</p>
 			<p>Чтобы установить новый пароль, перейдите по ссылке ниже:</p>
 			
 			<p>
@@ -108,7 +108,7 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 			<hr>
 			<p style="font-size:12px;color:gray;">
 			С уважением,<br>
-			Команда поддержки <b>Bobri</b>
+			Команда поддержки <b>Beaver</b>
 			</p>`
 
 		// Подставляем ссылку TODO
