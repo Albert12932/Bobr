@@ -29,7 +29,7 @@ func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker) gin.HandlerFunc 
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, models.ErrorResponse{
 				Error:   err.Error(),
-				Message: "Не удалось валидировать access токен",
+				Message: "Не удалось валидировать access токен. Возможно он истек",
 			})
 			return
 		}

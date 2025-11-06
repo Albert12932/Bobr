@@ -25,7 +25,7 @@ func main() {
 	if secret == "" {
 		log.Fatal("JWT_SECRET not set")
 	}
-	AccessJwtMaker := helpers.NewJWTMaker([]byte(secret), 30*time.Minute)
+	AccessJwtMaker := helpers.NewJWTMaker([]byte(secret), 15*time.Minute)
 
 	// Создаем движок gin для работы с HTTP и регистрируем роутеры
 	engine := gin.Default()
