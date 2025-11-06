@@ -8,11 +8,20 @@ import (
 	"time"
 )
 
+// DeleteUser @Summary      Удаление пользователя
+// @Description  Удаляет пользователя по номеру студенческого билета.
+// @Tags         users
+// @Accept       json
+// @Produce      json
+// @Param        input  body  models.AuthBookRequest  true  "Номер студенческого"
+// @Success      200  {object}  models.DeleteUserResponse  "Пользователь успешно удалён" example({"deleted":true,"book_id":123456})
+// @Failure      400  {object}  models.ErrorResponse        "Некорректный JSON"
+// @Failure      404  {object}  models.ErrorResponse        "Пользователь не найден"
+// @Failure      500  {object}  models.ErrorResponse        "Ошибка при удалении пользователя"
+// @Router       /helper/deleteUser [delete]
 func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var userData struct {
-			BookId int `json:"book_id"`
-		}
+		var userData models.AuthBookRequest
 		if err := c.ShouldBindJSON(&userData); err != nil {
 			c.JSON(400, models.ErrorResponse{
 				Error:   err.Error(),
@@ -37,12 +46,22 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 			})
 			return
 		}
-		c.JSON(200, gin.H{"deleted": true, "book_id": userData.BookId})
+		c.JSON(200, models.DeleteUserResponse{
+			Deleted: true,
+			BookId:  userData.BookId,
+		})
 		return
 	}
 
 }
 
+// GetStudents @Summary      Получение списка студентов
+// @Description  Возвращает всех студентов из таблицы students.
+// @Tags         students
+// @Produce      json
+// @Success      200  {array}  models.Student             "Список студентов" example([{"id":1,"book_id":123456,"surname":"Иванов","name":"Иван","middle_name":"Иванович","birth_date":"2000-01-01T00:00:00Z","student_group":"ШАД-111"}, {"id":2,"book_id":654321,"surname":"Петров","name":"Пётр","middle_name":"Петрович","birth_date":"1999-12-31T00:00:00Z","student_group":"ШАД-111"}])
+// @Failure      500  {object} models.ErrorResponse        "Ошибка при запросе или чтении данных"
+// @Router       /helper/students [get]
 func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var students []models.Student
@@ -78,6 +97,14 @@ func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 
 }
+
+// GetUsers @Summary      Получение списка пользователей
+// @Description  Возвращает всех зарегистрированных пользователей из таблицы users.
+// @Tags         users
+// @Produce      json
+// @Success      200  {array}  models.User               "Список пользователей" example([{"id":1,"book_id":123456,"surname":"Иванов","name":"Иван","middle_name":"Иванович","birth_date":"2000-01-01T00:00:00Z","student_group":"ШАД-111","password":"hashed_password","mail":"string mail"}, {"id":2,"book_id":654321,"surname":"Петров","name":"Пётр","middle_name":"Петрович","birth_date":"1999-12-31T00:00:00Z","student_group":"ШАД-111","password":"hashed_password","mail":"string mail"}])
+// @Failure      500  {object} models.ErrorResponse       "Ошибка при запросе или чтении данных"
+// @Router       /helper/users [get]
 func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var users []models.User

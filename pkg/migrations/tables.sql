@@ -31,9 +31,21 @@ CREATE TABLE roles (
                        name TEXT NOT NULL,
                        level INT NOT NULL CHECK (level > 0)
 );
-
-
-
+CREATE TABLE refresh_tokens (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash BYTEA NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '30 days',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE TABLE reset_password_tokens (
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    mail TEXT NOT NULL,
+    token_hash BYTEA NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (user_id)
+);
 
 
 -- Базовый набор
