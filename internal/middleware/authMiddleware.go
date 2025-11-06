@@ -57,8 +57,8 @@ func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker) gin.HandlerFunc 
 		}
 
 		fmt.Println(payload.RoleLevel)
-		
-		if payload.RoleLevel <= 50 {
+
+		if payload.RoleLevel <= 30 {
 			c.AbortWithStatusJSON(http.StatusForbidden, models.ErrorResponse{
 				Error:   "Forbidden",
 				Message: "Не достаточно прав",

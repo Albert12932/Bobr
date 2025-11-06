@@ -5,6 +5,7 @@ import (
 	"bobri/pkg/helpers"
 	"context"
 	"errors"
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"net/http"
 	"regexp"
 	"time"
@@ -50,6 +51,7 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
+		// Проверяем валидность почты регулярным выражением
 		validMail := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`).MatchString(body.Mail)
 		if !validMail {
 			c.JSON(http.StatusBadRequest,
@@ -59,6 +61,7 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
+		// Проверяем есть ли пользователь с такой почтой
 		var used bool
 		err := pool.QueryRow(c.Request.Context(),
 			`SELECT EXISTS(SELECT 1 FROM users WHERE mail = $1)`, body.Mail).Scan(&used)
@@ -90,7 +93,6 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 					Message: "Error while creating transaction"})
 			return
 		}
-
 		defer func() { _ = tx.Rollback(ctx) }()
 
 		// Проверяем не истек ли токен
@@ -115,23 +117,19 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		// TODO Создаем переменные для взятия из students и последующей вставки в users
-		var (
-			firstName, surname, middleName, studentGroup string
-			birthDate                                    time.Time
-		)
-		err = tx.QueryRow(ctx, `
-			SELECT name, surname, middle_name, student_group, birth_date
+		// Берем данные из students для последующей вставки в users
+		var student models.Student
+		err = pgxscan.Get(ctx, pool, &student, `
+			SELECT book_id, name, surname, middle_name, student_group, birth_date
 			FROM students
-			WHERE book_id = $1
-		`, bookID).Scan(&firstName, &surname, &middleName, &studentGroup, &birthDate)
-
+			WHERE book_id = $1`,
+			bookID)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.JSON(http.StatusNotFound,
 					models.ErrorResponse{
 						Error:   "No rows while getting student info",
-						Message: "Не удалось получить данные о студенте"})
+						Message: "Нет данных о студенте"})
 				return
 			}
 			c.JSON(http.StatusInternalServerError,
@@ -153,12 +151,15 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		// Вставляем в users данные пользователя
 		var userID int64
-		roleLevel := 10
+		roleLevel := int64(10)
 		err = tx.QueryRow(ctx, `
 			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password, mail, role_level)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			RETURNING id
-		`, bookID, firstName, surname, middleName, studentGroup, birthDate, hash, body.Mail, roleLevel).Scan(&userID)
+		`,
+			student.BookId, student.Name, student.Surname, student.MiddleName, student.Group, student.BirthDate,
+			hash, body.Mail, roleLevel).Scan(&userID)
+
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
@@ -180,7 +181,9 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 		var resp models.RegisterResponse
 		resp.OK = true
 		resp.UserSubstructure.ID = userID
-		resp.UserSubstructure.FirstName = firstName
+		resp.UserSubstructure.BookId = student.BookId
+		resp.UserSubstructure.Mail = body.Mail
+		resp.UserSubstructure.FirstName = student.Name
 		resp.UserSubstructure.RoleLevel = roleLevel
 
 		// на всякий случай отключим кеш

@@ -5,6 +5,7 @@ import (
 	"bobri/pkg/helpers"
 	"context"
 	"errors"
+	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -45,19 +46,13 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		defer cancel()
 
 		// Получаем инфу о пользователе
-		var (
-			id        int64
-			name      string
-			surname   string
-			password  []byte
-			mail      string
-			roleLevel int
-		)
-		err := pool.QueryRow(ctx, `
-		SELECT id, name, surname, password, mail, role_level
+		var user models.User
+
+		err := pgxscan.Get(ctx, pool, &user, `
+		SELECT id, coalesce(book_id, 0) as book_id, name, surname, password, mail, role_level
 		FROM users
 		WHERE mail = $1
-		`, loginData.Mail).Scan(&id, &name, &surname, &password, &mail, &roleLevel)
+		`, loginData.Mail)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.JSON(http.StatusNotFound, models.ErrorResponse{
@@ -74,7 +69,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		}
 
 		// Сверяем пароль из тела запроса и из бд
-		if err := bcrypt.CompareHashAndPassword(password, []byte(loginData.Password)); err != nil {
+		if err := bcrypt.CompareHashAndPassword(user.Password, []byte(loginData.Password)); err != nil {
 			c.JSON(http.StatusUnauthorized, models.ErrorResponse{
 				Error:   err.Error(),
 				Message: "Неправильный пароль",
@@ -83,7 +78,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		}
 
 		// Создаем access токен
-		accessToken, exp, err := AccessJwtMaker.Issue(id, int64(roleLevel))
+		accessToken, exp, err := AccessJwtMaker.Issue(user.Id, user.RoleLevel)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"error":   err.Error(),
@@ -96,7 +91,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		Tag, err := pool.Exec(ctx, `
 			DELETE FROM refresh_tokens
 			WHERE user_id = $1
-		`, id)
+		`, user.Id)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
@@ -119,7 +114,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		Tag, err = pool.Exec(ctx, `
 			INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
 			VALUES ($1, $2, $3)
-		`, id, helpers.HashToken(refreshToken), time.Now().Add(30*24*time.Hour)) // 30 дней`)
+		`, user.Id, helpers.HashToken(refreshToken), time.Now().Add(30*24*time.Hour)) // 30 дней`)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
@@ -137,10 +132,11 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 
 		// Возвращаем токен + ответ
 		var resp models.LoginResponse
-		resp.UserSubstructure.ID = id
-		resp.UserSubstructure.Mail = mail
-		resp.UserSubstructure.FirstName = name
-		resp.UserSubstructure.RoleLevel = roleLevel // TODO
+		resp.UserSubstructure.ID = user.Id
+		resp.UserSubstructure.Mail = user.Mail
+		resp.UserSubstructure.BookId = user.BookId
+		resp.UserSubstructure.FirstName = user.Name
+		resp.UserSubstructure.RoleLevel = user.RoleLevel
 		resp.Session.Auth.AccessToken = accessToken
 		resp.Session.Auth.RefreshToken = refreshToken
 		resp.Session.Auth.ExpiresAt = exp

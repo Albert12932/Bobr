@@ -346,7 +346,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Удаляет пользователя по номеру студенческого билета.",
+                "description": "Удаляет пользователя по адресу почты.",
                 "consumes": [
                     "application/json"
                 ],
@@ -359,25 +359,25 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "Bearer \u003ctoken\u003e",
+                        "default": "Bearer",
                         "description": "Bearer токен",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
                     {
-                        "description": "Номер студенческого",
+                        "description": "Почта",
                         "name": "input",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.AuthBookRequest"
+                            "$ref": "#/definitions/models.DeleteUserRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Пользователь успешно удалён\" example({\"deleted\":true,\"book_id\":123456})",
+                        "description": "Пользователь успешно удалён",
                         "schema": {
                             "$ref": "#/definitions/models.DeleteUserResponse"
                         }
@@ -484,7 +484,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "Bearer \u003ctoken\u003e",
+                        "default": "Bearer",
                         "description": "Bearer токен",
                         "name": "Authorization",
                         "in": "header",
@@ -493,7 +493,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Список студентов\" example([{\"id\":1,\"book_id\":123456,\"surname\":\"Иванов\",\"name\":\"Иван\",\"middle_name\":\"Иванович\",\"birth_date\":\"2000-01-01T00:00:00Z\",\"student_group\":\"ШАД-111\"}, {\"id\":2,\"book_id\":654321,\"surname\":\"Петров\",\"name\":\"Пётр\",\"middle_name\":\"Петрович\",\"birth_date\":\"1999-12-31T00:00:00Z\",\"student_group\":\"ШАД-111\"}])",
+                        "description": "Список студентов",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -527,7 +527,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "Bearer \u003ctoken\u003e",
+                        "default": "Bearer",
                         "description": "Bearer токен",
                         "name": "Authorization",
                         "in": "header",
@@ -536,7 +536,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Список пользователей\" example([{\"id\":1,\"book_id\":123456,\"surname\":\"Иванов\",\"name\":\"Иван\",\"middle_name\":\"Иванович\",\"birth_date\":\"2000-01-01T00:00:00Z\",\"student_group\":\"ШАД-111\",\"password\":\"hashed_password\",\"mail\":\"string mail\"}, {\"id\":2,\"book_id\":654321,\"surname\":\"Петров\",\"name\":\"Пётр\",\"middle_name\":\"Петрович\",\"birth_date\":\"1999-12-31T00:00:00Z\",\"student_group\":\"ШАД-111\",\"password\":\"hashed_password\",\"mail\":\"string mail\"}])",
+                        "description": "Список пользователей",
                         "schema": {
                             "type": "array",
                             "items": {
@@ -583,14 +583,22 @@ const docTemplate = `{
                 }
             }
         },
+        "models.DeleteUserRequest": {
+            "type": "object",
+            "properties": {
+                "mail": {
+                    "type": "string"
+                }
+            }
+        },
         "models.DeleteUserResponse": {
             "type": "object",
             "properties": {
-                "book_id": {
-                    "type": "integer"
-                },
                 "deleted": {
                     "type": "boolean"
+                },
+                "mail": {
+                    "type": "string"
                 }
             }
         },
@@ -809,9 +817,6 @@ const docTemplate = `{
                 "book_id": {
                     "type": "integer"
                 },
-                "group": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "integer"
                 },
@@ -833,6 +838,9 @@ const docTemplate = `{
                 "role_level": {
                     "type": "integer"
                 },
+                "student_group": {
+                    "type": "string"
+                },
                 "surname": {
                     "type": "string"
                 }
@@ -841,6 +849,9 @@ const docTemplate = `{
         "models.UserSubstructure": {
             "type": "object",
             "properties": {
+                "book_id": {
+                    "type": "integer"
+                },
                 "first_name": {
                     "type": "string"
                 },

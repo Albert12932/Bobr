@@ -11,21 +11,21 @@ import (
 )
 
 // DeleteUser @Summary      Удаление пользователя
-// @Description  Удаляет пользователя по номеру студенческого билета.
+// @Description  Удаляет пользователя по адресу почты.
 // @Tags         users
 // @Accept       json
 // @Produce      json
 // @Security     BearerAuth
-// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer <token>)
-// @Param        input  body  models.AuthBookRequest  true  "Номер студенческого"
-// @Success      200  {object}  models.DeleteUserResponse  "Пользователь успешно удалён" example({"deleted":true,"book_id":123456})
+// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer )
+// @Param        input  body  models.DeleteUserRequest  true  "Почта"
+// @Success      200  {object}  models.DeleteUserResponse  "Пользователь успешно удалён"
 // @Failure      400  {object}  models.ErrorResponse        "Некорректный JSON"
 // @Failure      404  {object}  models.ErrorResponse        "Пользователь не найден"
 // @Failure      500  {object}  models.ErrorResponse        "Ошибка при удалении пользователя"
 // @Router       /helper/delete_user [delete]
 func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var userData models.AuthBookRequest
+		var userData models.DeleteUserRequest
 		if err := c.ShouldBindJSON(&userData); err != nil {
 			c.JSON(400, models.ErrorResponse{
 				Error:   err.Error(),
@@ -33,9 +33,10 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 			})
 			return
 		}
+
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
-		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE book_id = $1", userData.BookId)
+		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE mail = $1", userData.Mail)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
 				Error:   err.Error(),
@@ -52,7 +53,7 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 		c.JSON(200, models.DeleteUserResponse{
 			Deleted: true,
-			BookId:  userData.BookId,
+			Mail:    userData.Mail,
 		})
 		return
 	}
@@ -64,8 +65,8 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 // @Tags         students
 // @Produce      json
 // @Security     BearerAuth
-// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer <token>)
-// @Success      200  {array}  models.Student             "Список студентов" example([{"id":1,"book_id":123456,"surname":"Иванов","name":"Иван","middle_name":"Иванович","birth_date":"2000-01-01T00:00:00Z","student_group":"ШАД-111"}, {"id":2,"book_id":654321,"surname":"Петров","name":"Пётр","middle_name":"Петрович","birth_date":"1999-12-31T00:00:00Z","student_group":"ШАД-111"}])
+// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer )
+// @Success      200  {array}  models.Student             "Список студентов"
 // @Failure      500  {object} models.ErrorResponse        "Ошибка при запросе или чтении данных"
 // @Router       /helper/students [get]
 func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
@@ -97,20 +98,32 @@ func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
 // @Tags         users
 // @Produce      json
 // @Security     BearerAuth
-// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer <token>)
-// @Success      200  {array}  models.User               "Список пользователей" example([{"id":1,"book_id":123456,"surname":"Иванов","name":"Иван","middle_name":"Иванович","birth_date":"2000-01-01T00:00:00Z","student_group":"ШАД-111","password":"hashed_password","mail":"string mail"}, {"id":2,"book_id":654321,"surname":"Петров","name":"Пётр","middle_name":"Петрович","birth_date":"1999-12-31T00:00:00Z","student_group":"ШАД-111","password":"hashed_password","mail":"string mail"}])
+// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer )
+// @Success      200  {array}  models.User               "Список пользователей"
 // @Failure      500  {object} models.ErrorResponse       "Ошибка при запросе или чтении данных"
 // @Router       /helper/users [get]
 func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var users []models.User
 
+		payloadInterface, existsPayload := c.Get("userPayload")
+		if !existsPayload {
+			c.JSON(http.StatusInternalServerError,
+				models.ErrorResponse{
+					Error:   "Payload doesn't exist",
+					Message: "Данные о пользователе в JWT Токене (Payload) не найдены",
+				})
+			return
+		}
+
+		// Преобразуем payload в наш тип
+		payload := payloadInterface.(*models.Payload)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
 		defer cancel()
-		// TODO where level_role < payload.roleLevel
 		err := pgxscan.Select(ctx, pool, &users,
-			"SELECT id, COALESCE(book_id, 0) as book_id, surname, name, middle_name, coalesce(birth_date, '1970-01-01'::timestamp) as birth_date, coalesce(student_group, '') as student_group, password, mail, role_level FROM users")
+			"SELECT id, COALESCE(book_id, 0) as book_id, surname, name, middle_name, coalesce(birth_date, '1970-01-01'::timestamp) as birth_date, coalesce(student_group, '') as student_group, password, mail, role_level FROM users where role_level <= $1", payload.RoleLevel)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{

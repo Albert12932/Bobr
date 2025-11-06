@@ -155,8 +155,8 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			Status:          "free",
 			DisplayName:     CurStudent.Name,
 			Group:           CurStudent.Group,
-			LinkToken:       rawToken,                            // сырой токен
-			LinkTokenTtlSec: int(helpers.LinkTokenTTL.Seconds()), // 300
+			LinkToken:       rawToken,                              // сырой токен
+			LinkTokenTtlSec: int64(helpers.LinkTokenTTL.Seconds()), // 300
 		})
 	}
 }

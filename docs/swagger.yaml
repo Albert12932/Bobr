@@ -17,12 +17,17 @@ definitions:
       status:
         type: string
     type: object
+  models.DeleteUserRequest:
+    properties:
+      mail:
+        type: string
+    type: object
   models.DeleteUserResponse:
     properties:
-      book_id:
-        type: integer
       deleted:
         type: boolean
+      mail:
+        type: string
     type: object
   models.ErrorResponse:
     properties:
@@ -163,8 +168,6 @@ definitions:
         type: string
       book_id:
         type: integer
-      group:
-        type: string
       id:
         type: integer
       mail:
@@ -179,11 +182,15 @@ definitions:
         type: array
       role_level:
         type: integer
+      student_group:
+        type: string
       surname:
         type: string
     type: object
   models.UserSubstructure:
     properties:
+      book_id:
+        type: integer
       first_name:
         type: string
       id:
@@ -422,25 +429,25 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Удаляет пользователя по номеру студенческого билета.
+      description: Удаляет пользователя по адресу почты.
       parameters:
-      - default: Bearer <token>
+      - default: Bearer
         description: Bearer токен
         in: header
         name: Authorization
         required: true
         type: string
-      - description: Номер студенческого
+      - description: Почта
         in: body
         name: input
         required: true
         schema:
-          $ref: '#/definitions/models.AuthBookRequest'
+          $ref: '#/definitions/models.DeleteUserRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Пользователь успешно удалён" example({"deleted":true,"book_id":123456})
+          description: Пользователь успешно удалён
           schema:
             $ref: '#/definitions/models.DeleteUserResponse'
         "400":
@@ -505,7 +512,7 @@ paths:
     get:
       description: Возвращает всех студентов из таблицы students.
       parameters:
-      - default: Bearer <token>
+      - default: Bearer
         description: Bearer токен
         in: header
         name: Authorization
@@ -515,8 +522,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Список студентов" example([{"id":1,"book_id":123456,"surname":"Иванов","name":"Иван","middle_name":"Иванович","birth_date":"2000-01-01T00:00:00Z","student_group":"ШАД-111"},
-            {"id":2,"book_id":654321,"surname":"Петров","name":"Пётр","middle_name":"Петрович","birth_date":"1999-12-31T00:00:00Z","student_group":"ШАД-111"}])
+          description: Список студентов
           schema:
             items:
               $ref: '#/definitions/models.Student'
@@ -533,7 +539,7 @@ paths:
     get:
       description: Возвращает всех зарегистрированных пользователей из таблицы users.
       parameters:
-      - default: Bearer <token>
+      - default: Bearer
         description: Bearer токен
         in: header
         name: Authorization
@@ -543,9 +549,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Список пользователей" example([{"id":1,"book_id":123456,"surname":"Иванов","name":"Иван","middle_name":"Иванович","birth_date":"2000-01-01T00:00:00Z","student_group":"ШАД-111","password":"hashed_password","mail":"string
-            mail"}, {"id":2,"book_id":654321,"surname":"Петров","name":"Пётр","middle_name":"Петрович","birth_date":"1999-12-31T00:00:00Z","student_group":"ШАД-111","password":"hashed_password","mail":"string
-            mail"}])
+          description: Список пользователей
           schema:
             items:
               $ref: '#/definitions/models.User'
