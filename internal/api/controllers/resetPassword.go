@@ -1,8 +1,8 @@
 package controllers
 
 import (
+	"bobri/internal/models"
 	"bobri/pkg/helpers"
-	"bobri/pkg/models"
 	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"

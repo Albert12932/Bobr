@@ -1,8 +1,8 @@
 package controllers
 
 import (
+	"bobri/internal/models"
 	"bobri/pkg/helpers"
-	"bobri/pkg/models"
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
@@ -42,12 +42,12 @@ func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		ctxStud, cancelStud := context.WithTimeout(c.Request.Context(), 3*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 
-		defer cancelStud()
+		defer cancel()
 
 		// Получаем все данные студента
-		err := pool.QueryRow(ctxStud, `SELECT id, book_id, surname, name, middle_name, birth_date, "student_group"
+		err := pool.QueryRow(ctx, `SELECT id, book_id, surname, name, middle_name, birth_date, "student_group"
 			   FROM students WHERE book_id = $1`,
 			AuthCheck.BookId,
 		).Scan(

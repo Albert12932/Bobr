@@ -1,7 +1,6 @@
 package helpers
 
 import (
-	"context"
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
@@ -48,7 +47,7 @@ func (m *JWTMaker) Issue(userID int64) (token string, exp time.Time, err error) 
 	return
 }
 
-func (m *JWTMaker) Verify(ctx context.Context, token string) (jwt.MapClaims, error) {
+func (m *JWTMaker) Verify(token string) (jwt.MapClaims, error) {
 	t, err := jwt.Parse(token, func(t *jwt.Token) (interface{}, error) {
 		return m.secret, nil
 	})
