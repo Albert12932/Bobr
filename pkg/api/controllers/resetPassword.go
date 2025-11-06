@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 	"log"
+	"net/http"
 	"net/smtp"
 	"os"
 	"strings"
@@ -182,6 +183,15 @@ func SetNewPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 				Error:   err.Error(),
 				Message: "Невалидный или истекший токен сброса пароля",
 			})
+			return
+		}
+
+		// Проверяем, что длина пароля не меньше 8 символов
+		if len(body.NewPassword) < 8 {
+			c.JSON(http.StatusBadRequest,
+				models.ErrorResponse{
+					Error:   "Weak password",
+					Message: "Пароль должен быть не менее 8 символов"})
 			return
 		}
 
