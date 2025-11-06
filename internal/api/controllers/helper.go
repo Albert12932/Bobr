@@ -13,6 +13,8 @@ import (
 // @Tags         users
 // @Accept       json
 // @Produce      json
+// @Security     BearerAuth
+// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer <token>)
 // @Param        input  body  models.AuthBookRequest  true  "Номер студенческого"
 // @Success      200  {object}  models.DeleteUserResponse  "Пользователь успешно удалён" example({"deleted":true,"book_id":123456})
 // @Failure      400  {object}  models.ErrorResponse        "Некорректный JSON"
@@ -59,6 +61,8 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 // @Description  Возвращает всех студентов из таблицы students.
 // @Tags         students
 // @Produce      json
+// @Security     BearerAuth
+// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer <token>)
 // @Success      200  {array}  models.Student             "Список студентов" example([{"id":1,"book_id":123456,"surname":"Иванов","name":"Иван","middle_name":"Иванович","birth_date":"2000-01-01T00:00:00Z","student_group":"ШАД-111"}, {"id":2,"book_id":654321,"surname":"Петров","name":"Пётр","middle_name":"Петрович","birth_date":"1999-12-31T00:00:00Z","student_group":"ШАД-111"}])
 // @Failure      500  {object} models.ErrorResponse        "Ошибка при запросе или чтении данных"
 // @Router       /helper/students [get]
@@ -102,6 +106,8 @@ func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
 // @Description  Возвращает всех зарегистрированных пользователей из таблицы users.
 // @Tags         users
 // @Produce      json
+// @Security     BearerAuth
+// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer <token>)
 // @Success      200  {array}  models.User               "Список пользователей" example([{"id":1,"book_id":123456,"surname":"Иванов","name":"Иван","middle_name":"Иванович","birth_date":"2000-01-01T00:00:00Z","student_group":"ШАД-111","password":"hashed_password","mail":"string mail"}, {"id":2,"book_id":654321,"surname":"Петров","name":"Пётр","middle_name":"Петрович","birth_date":"1999-12-31T00:00:00Z","student_group":"ШАД-111","password":"hashed_password","mail":"string mail"}])
 // @Failure      500  {object} models.ErrorResponse       "Ошибка при запросе или чтении данных"
 // @Router       /helper/users [get]
