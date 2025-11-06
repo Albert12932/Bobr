@@ -339,7 +339,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/helper/deleteUser": {
+        "/helper/delete_user": {
             "delete": {
                 "security": [
                     {
@@ -396,6 +396,70 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Ошибка при удалении пользователя",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/helper/set_role": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Устанавливает уровень роли для указанного пользователя. Требуются права администратора.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer \u003ctoken\u003e",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные для установки роли",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.SetRoleRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Роль успешно установлена",
+                        "schema": {
+                            "$ref": "#/definitions/models.SetRoleResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный JSON",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Недостаточно прав",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -563,21 +627,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/models.Session"
                 },
                 "user": {
-                    "type": "object",
-                    "properties": {
-                        "first_name": {
-                            "type": "string"
-                        },
-                        "id": {
-                            "type": "integer"
-                        },
-                        "mail": {
-                            "type": "string"
-                        },
-                        "surname": {
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/models.UserSubstructure"
                 }
             }
         },
@@ -624,18 +674,7 @@ const docTemplate = `{
                     "type": "boolean"
                 },
                 "user": {
-                    "type": "object",
-                    "properties": {
-                        "first_name": {
-                            "type": "string"
-                        },
-                        "id": {
-                            "type": "integer"
-                        },
-                        "surname": {
-                            "type": "string"
-                        }
-                    }
+                    "$ref": "#/definitions/models.UserSubstructure"
                 }
             }
         },
@@ -710,6 +749,31 @@ const docTemplate = `{
                 }
             }
         },
+        "models.SetRoleRequest": {
+            "type": "object",
+            "properties": {
+                "role_level": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.SetRoleResponse": {
+            "type": "object",
+            "properties": {
+                "role_level": {
+                    "type": "integer"
+                },
+                "successful": {
+                    "type": "boolean"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.Student": {
             "type": "object",
             "properties": {
@@ -766,8 +830,28 @@ const docTemplate = `{
                         "type": "integer"
                     }
                 },
+                "role_level": {
+                    "type": "integer"
+                },
                 "surname": {
                     "type": "string"
+                }
+            }
+        },
+        "models.UserSubstructure": {
+            "type": "object",
+            "properties": {
+                "first_name": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "mail": {
+                    "type": "string"
+                },
+                "role_level": {
+                    "type": "integer"
                 }
             }
         }

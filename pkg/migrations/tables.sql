@@ -1,14 +1,14 @@
 CREATE TABLE users (
                        id serial primary key,
-                       book_id int unique not null,
+                       book_id int unique,
                        surname text not null,
                        name text not null,
                        middle_name text not null,
                        birth_date date,
-                       student_group text not null,
+                       student_group text,
                        password bytea,
-                       mail text not null
-                    -- role_level int not null REFERENCES roles(level)
+                       mail text not null,
+                    role_level int not null REFERENCES roles(level)
 );
 CREATE TABLE students (
                           id serial primary key,
@@ -30,14 +30,15 @@ CREATE TABLE roles (
                        id SERIAL PRIMARY KEY,
                        code TEXT UNIQUE NOT NULL,     -- 'student', 'activist', ...
                        name TEXT NOT NULL,
-                       level INT NOT NULL CHECK (level > 0)
+                       level INT unique NOT NULL CHECK (level > 0)
 );
 CREATE TABLE refresh_tokens (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash BYTEA NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL DEFAULT now() + INTERVAL '30 days',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE TABLE reset_password_tokens (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

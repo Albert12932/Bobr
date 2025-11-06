@@ -33,9 +33,10 @@ type User struct {
 	Name       string    `json:"name"`
 	MiddleName string    `json:"middle_name"`
 	BirthDate  time.Time `json:"birth_date"`
-	Group      string    `json:"group"`
+	Group      string    `json:"student_group" db:"student_group"`
 	Password   []byte    `json:"password"`
 	Mail       string    `json:"mail"`
+	RoleLevel  int       `json:"role_level"`
 }
 
 type AuthStatus struct {
@@ -62,12 +63,8 @@ type RefreshTokenRequest struct {
 }
 
 type RegisterResponse struct {
-	OK   bool `json:"ok"`
-	User struct {
-		ID        int64  `json:"id"`
-		FirstName string `json:"first_name"`
-		Surname   string `json:"surname"`
-	}
+	OK               bool `json:"ok"`
+	UserSubstructure `json:"user"`
 }
 
 type Session struct {
@@ -78,14 +75,16 @@ type Session struct {
 	} `json:"auth"`
 }
 
+type UserSubstructure struct {
+	ID        int64  `json:"id"`
+	Mail      string `json:"mail"`
+	FirstName string `json:"first_name"`
+	RoleLevel int    `json:"role_level"`
+	// TODO bookId with coalesce
+}
 type LoginResponse struct {
-	User struct {
-		ID        int64  `json:"id"`
-		Mail      string `json:"mail"`
-		FirstName string `json:"first_name"`
-		Surname   string `json:"surname"`
-	} `json:"user"`
-	Session `json:"session"`
+	UserSubstructure `json:"user"`
+	Session          `json:"session"`
 }
 
 type RefreshTokenResponse struct {
@@ -114,7 +113,18 @@ type SetNewPasswordResponse struct {
 }
 
 type Payload struct {
-	Sub int64 `json:"sub"`
-	Exp int64 `json:"exp"`
-	Iat int64 `json:"iat"`
+	Sub       int64 `json:"sub"`
+	RoleLevel int64 `json:"role_level"`
+	Exp       int64 `json:"exp"`
+	Iat       int64 `json:"iat"`
+}
+
+type SetRoleRequest struct {
+	UserId    int64 `json:"user_id"`
+	RoleLevel int64 `json:"role_level"`
+}
+type SetRoleResponse struct {
+	Successful bool  `json:"successful"`
+	UserID     int64 `json:"user_id"`
+	RoleLevel  int64 `json:"role_level"`
 }

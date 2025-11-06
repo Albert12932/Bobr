@@ -115,7 +115,7 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		// Создаем переменные для взятия из students и последующей вставки в users
+		// TODO Создаем переменные для взятия из students и последующей вставки в users
 		var (
 			firstName, surname, middleName, studentGroup string
 			birthDate                                    time.Time
@@ -153,11 +153,12 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		// Вставляем в users данные пользователя
 		var userID int64
+		roleLevel := 10
 		err = tx.QueryRow(ctx, `
-			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password, mail)
-			VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password, mail, role_level)
+			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			RETURNING id
-		`, bookID, firstName, surname, middleName, studentGroup, birthDate, hash, body.Mail).Scan(&userID)
+		`, bookID, firstName, surname, middleName, studentGroup, birthDate, hash, body.Mail, roleLevel).Scan(&userID)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
@@ -178,9 +179,9 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 		// Выдаем ответ в нужном формате
 		var resp models.RegisterResponse
 		resp.OK = true
-		resp.User.ID = userID
-		resp.User.FirstName = firstName
-		resp.User.Surname = surname
+		resp.UserSubstructure.ID = userID
+		resp.UserSubstructure.FirstName = firstName
+		resp.UserSubstructure.RoleLevel = roleLevel
 
 		// на всякий случай отключим кеш
 		c.Header("Cache-Control", "no-store")

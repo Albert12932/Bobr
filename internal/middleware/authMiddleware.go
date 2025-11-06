@@ -44,6 +44,10 @@ func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker) gin.HandlerFunc 
 			payload.Sub = int64(sub)
 		}
 
+		if roleLevel, ok := claims["roleLevel"].(float64); ok {
+			payload.RoleLevel = int64(roleLevel)
+		}
+
 		if exp, ok := claims["exp"].(float64); ok {
 			payload.Exp = int64(exp)
 		}
@@ -52,16 +56,14 @@ func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker) gin.HandlerFunc 
 			payload.Iat = int64(iat)
 		}
 
-		fmt.Println(payload)
-
-		fmt.Printf("sub: %v (type: %T)\n", claims["sub"], claims["sub"])
-		fmt.Printf("exp: %v (type: %T)\n", claims["exp"], claims["exp"])
-		fmt.Printf("iat: %v (type: %T)\n", claims["iat"], claims["iat"])
-
-		// Преобразование
-		if sub, ok := claims["sub"].(float64); ok {
-			payload.Sub = int64(sub)
-			fmt.Printf("Converted sub: %d\n", payload.Sub)
+		fmt.Println(payload.RoleLevel)
+		
+		if payload.RoleLevel <= 50 {
+			c.AbortWithStatusJSON(http.StatusForbidden, models.ErrorResponse{
+				Error:   "Forbidden",
+				Message: "Не достаточно прав",
+			})
+			return
 		}
 
 		// Сохраняем payload в модель и продолжаем, если токен валиден

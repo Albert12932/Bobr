@@ -30,7 +30,8 @@ func HelperRoutes(r *gin.Engine, db *pgxpool.Pool, accessJWTMaker *helpers.JWTMa
 	// Создаем группу защищенных хэндлеров
 	protectedHelper := r.Group("/helper")
 	protectedHelper.Use(middleware.AuthenticationMiddleware(accessJWTMaker))
-	protectedHelper.DELETE("/deleteUser", controllers.DeleteUser(db))
+	protectedHelper.DELETE("/delete_user", controllers.DeleteUser(db))
 	protectedHelper.GET("/students", controllers.GetStudents(db))
 	protectedHelper.GET("/users", controllers.GetUsers(db))
+	protectedHelper.POST("/set_role", controllers.SetRole(db))
 }

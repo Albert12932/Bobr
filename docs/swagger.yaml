@@ -46,16 +46,7 @@ definitions:
       session:
         $ref: '#/definitions/models.Session'
       user:
-        properties:
-          first_name:
-            type: string
-          id:
-            type: integer
-          mail:
-            type: string
-          surname:
-            type: string
-        type: object
+        $ref: '#/definitions/models.UserSubstructure'
     type: object
   models.RefreshTokenRequest:
     properties:
@@ -85,14 +76,7 @@ definitions:
       ok:
         type: boolean
       user:
-        properties:
-          first_name:
-            type: string
-          id:
-            type: integer
-          surname:
-            type: string
-        type: object
+        $ref: '#/definitions/models.UserSubstructure'
     type: object
   models.ResetPasswordRequest:
     properties:
@@ -140,6 +124,22 @@ definitions:
       ok:
         type: boolean
     type: object
+  models.SetRoleRequest:
+    properties:
+      role_level:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  models.SetRoleResponse:
+    properties:
+      role_level:
+        type: integer
+      successful:
+        type: boolean
+      user_id:
+        type: integer
+    type: object
   models.Student:
     properties:
       birth_date:
@@ -177,8 +177,21 @@ definitions:
         items:
           type: integer
         type: array
+      role_level:
+        type: integer
       surname:
         type: string
+    type: object
+  models.UserSubstructure:
+    properties:
+      first_name:
+        type: string
+      id:
+        type: integer
+      mail:
+        type: string
+      role_level:
+        type: integer
     type: object
 info:
   contact: {}
@@ -405,7 +418,7 @@ paths:
             $ref: '#/definitions/models.ErrorResponse'
       tags:
       - auth
-  /helper/deleteUser:
+  /helper/delete_user:
     delete:
       consumes:
       - application/json
@@ -446,6 +459,48 @@ paths:
       - BearerAuth: []
       tags:
       - users
+  /helper/set_role:
+    post:
+      consumes:
+      - application/json
+      description: Устанавливает уровень роли для указанного пользователя. Требуются
+        права администратора.
+      parameters:
+      - default: Bearer <token>
+        description: Bearer токен
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Данные для установки роли
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.SetRoleRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Роль успешно установлена
+          schema:
+            $ref: '#/definitions/models.SetRoleResponse'
+        "400":
+          description: Некорректный JSON
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Недостаточно прав
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      tags:
+      - admin
   /helper/students:
     get:
       description: Возвращает всех студентов из таблицы students.
