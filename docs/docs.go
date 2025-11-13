@@ -15,6 +15,159 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/admin/delete_user": {
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Удаляет пользователя по адресу почты.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Удаление пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Почта",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Пользователь успешно удалён",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный JSON",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Пользователь не найден",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при удалении пользователя",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/students": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает всех студентов из таблицы students.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получение списка студентов",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список студентов",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Student"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при запросе или чтении данных",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/users": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает всех зарегистрированных пользователей из таблицы users.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получение списка пользователей",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer",
+                        "description": "Bearer токен",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список пользователей",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.User"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при запросе или чтении данных",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/auth/check": {
             "post": {
                 "description": "Проверяет наличие студенческого билета в системе.\nЕсли студент не зарегистрирован, генерирует временный токен для регистрации.",
@@ -27,6 +180,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
+                "summary": "Проверка студенческого в системе",
                 "parameters": [
                     {
                         "description": "Номер студенческого билета",
@@ -84,6 +238,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
+                "summary": "Авторизация пользователя",
                 "parameters": [
                     {
                         "description": "Данные для входа (почта и пароль)",
@@ -141,6 +296,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
+                "summary": "Обновление access и refresh токенов",
                 "parameters": [
                     {
                         "description": "Refresh токен",
@@ -192,6 +348,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
+                "summary": "Регистрация пользователя по токену",
                 "parameters": [
                     {
                         "description": "Почта, пароль и токен регистрации пользователя",
@@ -205,7 +362,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Успешная регистрация\" example({\"ok\":true,\"user\":{\"id\":1,\"first_name\":\"Иван\",\"surname\":\"Иванов\"}})",
+                        "description": "Успешная регистрация",
                         "schema": {
                             "$ref": "#/definitions/models.RegisterResponse"
                         }
@@ -255,6 +412,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
+                "summary": "Запрос на сброс пароля",
                 "parameters": [
                     {
                         "description": "Почта пользователя",
@@ -300,6 +458,7 @@ const docTemplate = `{
                 "tags": [
                     "auth"
                 ],
+                "summary": "Установка нового пароля",
                 "parameters": [
                     {
                         "description": "Токен и новый пароль",
@@ -339,148 +498,21 @@ const docTemplate = `{
                 }
             }
         },
-        "/helper/delete_user": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Удаляет пользователя по адресу почты.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "Bearer",
-                        "description": "Bearer токен",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "Почта",
-                        "name": "input",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.DeleteUserRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Пользователь успешно удалён",
-                        "schema": {
-                            "$ref": "#/definitions/models.DeleteUserResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Некорректный JSON",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Пользователь не найден",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка при удалении пользователя",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/helper/set_role": {
-            "post": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Устанавливает уровень роли для указанного пользователя. Требуются права администратора.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "admin"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "Bearer \u003ctoken\u003e",
-                        "description": "Bearer токен",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "Данные для установки роли",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/models.SetRoleRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Роль успешно установлена",
-                        "schema": {
-                            "$ref": "#/definitions/models.SetRoleResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Некорректный JSON",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
-                    "403": {
-                        "description": "Недостаточно прав",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка сервера",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/helper/students": {
+        "/profile": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Возвращает всех студентов из таблицы students.",
+                "description": "Возвращает данные о пользователе",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
-                    "students"
+                    "user"
                 ],
+                "summary": "Получение профиля пользователя",
                 "parameters": [
                     {
                         "type": "string",
@@ -493,55 +525,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Список студентов",
+                        "description": "Данные о пользователе",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Student"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Ошибка при запросе или чтении данных",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/helper/users": {
-            "get": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Возвращает всех зарегистрированных пользователей из таблицы users.",
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "users"
-                ],
-                "parameters": [
-                    {
-                        "type": "string",
-                        "default": "Bearer",
-                        "description": "Bearer токен",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Список пользователей",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.User"
-                            }
+                            "$ref": "#/definitions/models.ProfileResponse"
                         }
                     },
                     "500": {
@@ -555,6 +541,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.Auth": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "integer"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
         "models.AuthBookRequest": {
             "type": "object",
             "properties": {
@@ -631,11 +631,42 @@ const docTemplate = `{
         "models.LoginResponse": {
             "type": "object",
             "properties": {
-                "session": {
-                    "$ref": "#/definitions/models.Session"
+                "auth": {
+                    "$ref": "#/definitions/models.Auth"
                 },
                 "user": {
                     "$ref": "#/definitions/models.UserSubstructure"
+                }
+            }
+        },
+        "models.ProfileResponse": {
+            "type": "object",
+            "properties": {
+                "birthDate": {
+                    "type": "string"
+                },
+                "bookId": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "mail": {
+                    "type": "string"
+                },
+                "middleName": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "roleLevel": {
+                    "type": "integer",
+                    "format": "int64"
+                },
+                "studentGroup": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
                 }
             }
         },
@@ -650,8 +681,8 @@ const docTemplate = `{
         "models.RefreshTokenResponse": {
             "type": "object",
             "properties": {
-                "session": {
-                    "$ref": "#/definitions/models.Session"
+                "auth": {
+                    "$ref": "#/definitions/models.Auth"
                 },
                 "user_id": {
                     "type": "integer"
@@ -678,8 +709,8 @@ const docTemplate = `{
         "models.RegisterResponse": {
             "type": "object",
             "properties": {
-                "ok": {
-                    "type": "boolean"
+                "auth": {
+                    "$ref": "#/definitions/models.Auth"
                 },
                 "user": {
                     "$ref": "#/definitions/models.UserSubstructure"
@@ -712,25 +743,6 @@ const docTemplate = `{
                 }
             }
         },
-        "models.Session": {
-            "type": "object",
-            "properties": {
-                "auth": {
-                    "type": "object",
-                    "properties": {
-                        "access_token": {
-                            "type": "string"
-                        },
-                        "expires_at": {
-                            "type": "string"
-                        },
-                        "refresh_token": {
-                            "type": "string"
-                        }
-                    }
-                }
-            }
-        },
         "models.SetNewPasswordRequest": {
             "type": "object",
             "required": [
@@ -754,31 +766,6 @@ const docTemplate = `{
                 },
                 "ok": {
                     "type": "boolean"
-                }
-            }
-        },
-        "models.SetRoleRequest": {
-            "type": "object",
-            "properties": {
-                "role_level": {
-                    "type": "integer"
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.SetRoleResponse": {
-            "type": "object",
-            "properties": {
-                "role_level": {
-                    "type": "integer"
-                },
-                "successful": {
-                    "type": "boolean"
-                },
-                "user_id": {
-                    "type": "integer"
                 }
             }
         },
