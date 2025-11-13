@@ -33,13 +33,13 @@ func NewJWTMaker(secret []byte, lifetime time.Duration) *JWTMaker {
 	return &JWTMaker{secret: secret, lifetime: lifetime}
 }
 
-func (m *JWTMaker) Issue(userID, roleLevel int64) (token string, exp time.Time, err error) {
-	exp = time.Now().Add(m.lifetime)
+func (m *JWTMaker) Issue(userID, roleLevel int64) (token string, exp int64, err error) {
+	exp = time.Now().Add(m.lifetime).Unix()
 
 	claims := jwt.MapClaims{
 		"sub":       userID, // кто
 		"roleLevel": roleLevel,
-		"exp":       exp.Unix(), // срок
+		"exp":       exp, // срок
 		"iat":       time.Now().Unix(),
 	}
 

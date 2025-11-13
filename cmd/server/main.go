@@ -31,7 +31,8 @@ func main() {
 	engine := gin.Default()
 
 	routes.AuthRoutes(engine, db, AccessJwtMaker)
-	routes.HelperRoutes(engine, db, AccessJwtMaker)
+	routes.AdminRoutes(engine, db, AccessJwtMaker)
+	routes.UserRoutes(engine, db, AccessJwtMaker)
 
 	// Запускаем движок
 	if err := engine.Run(":8080"); err != nil {
