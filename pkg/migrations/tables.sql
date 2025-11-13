@@ -1,4 +1,10 @@
-CREATE TABLE users (
+CREATE TABLE IF NOT EXISTS roles (
+                                     id SERIAL PRIMARY KEY,
+                                     code TEXT UNIQUE NOT NULL,     -- 'student', 'activist', ...
+                                     name TEXT NOT NULL,
+                                     level INT unique NOT NULL CHECK (level > 0)
+);
+CREATE TABLE IF NOT EXISTS users (
                        id serial primary key,
                        book_id int unique,
                        surname text not null,
@@ -10,7 +16,7 @@ CREATE TABLE users (
                        mail text not null,
                     role_level int not null REFERENCES roles(level)
 );
-CREATE TABLE students (
+CREATE TABLE IF NOT EXISTS students (
                           id serial primary key,
                           book_id int unique not null,
                           surname text not null,
@@ -19,20 +25,15 @@ CREATE TABLE students (
                           birth_date date,
                           student_group text not null
 );
-CREATE TABLE link_tokens (
+CREATE TABLE IF NOT EXISTS link_tokens (
                              book_id     INT NOT NULL REFERENCES students(book_id) ON DELETE CASCADE,
                              token_hash  BYTEA NOT NULL,
                              expires_at  TIMESTAMPTZ NOT NULL,
                              created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
                              PRIMARY KEY (book_id)
 );
-CREATE TABLE roles (
-                       id SERIAL PRIMARY KEY,
-                       code TEXT UNIQUE NOT NULL,     -- 'student', 'activist', ...
-                       name TEXT NOT NULL,
-                       level INT unique NOT NULL CHECK (level > 0)
-);
-CREATE TABLE refresh_tokens (
+
+CREATE TABLE IF NOT EXISTS refresh_tokens (
     id SERIAL PRIMARY KEY,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash BYTEA NOT NULL,
@@ -40,7 +41,7 @@ CREATE TABLE refresh_tokens (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
-CREATE TABLE reset_password_tokens (
+CREATE TABLE IF NOT EXISTS reset_password_tokens (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     mail TEXT NOT NULL,
     token_hash BYTEA NOT NULL,

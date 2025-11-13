@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker) gin.HandlerFunc {
+func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker, roleLevelRequired int64) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// Берем токен авторизации из header
 		authHeader := c.GetHeader("Authorization")
@@ -58,7 +58,7 @@ func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker) gin.HandlerFunc 
 
 		fmt.Println(payload.RoleLevel)
 
-		if payload.RoleLevel <= 30 {
+		if payload.RoleLevel < roleLevelRequired {
 			c.AbortWithStatusJSON(http.StatusForbidden, models.ErrorResponse{
 				Error:   "Forbidden",
 				Message: "Не достаточно прав",

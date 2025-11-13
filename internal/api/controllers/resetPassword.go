@@ -16,7 +16,8 @@ import (
 	"time"
 )
 
-// ResetPassword @Summary      Запрос на сброс пароля
+// ResetPassword Запрос на сброс пароля
+// @Summary      Запрос на сброс пароля
 // @Description  Отправляет на почту пользователя ссылку для сброса пароля.
 // @Description  Если пользователь с указанной почтой существует — ему придёт письмо с временной ссылкой на установку нового пароля.
 // @Tags         auth
@@ -93,15 +94,7 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 		htmlBody := `
 			<h2>Здравствуйте!</h2>
 			<p>Вы запросили сброс пароля для своего аккаунта в системе <b>Beaver</b>.</p>
-			<p>Чтобы установить новый пароль, перейдите по ссылке ниже:</p>
-			
-			<p>
-			  <a href="{{RESET_LINK}}" style="background-color:#4CAF50;color:white;padding:10px 20px;text-decoration:none;border-radius:6px;">
-				Сбросить пароль
-			  </a>
-			</p>
-			
-			<p>Ссылка будет активна <b>в течение 15 минут</b>.</p>
+
 			<p>Если вы не запрашивали сброс пароля — просто проигнорируйте это письмо.</p>
 			<p>{{RESET_TOKEN}}</p>
 			
@@ -142,7 +135,8 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 	}
 }
 
-// SetNewPassword @Summary      Установка нового пароля
+// SetNewPassword Установка нового пароля
+// @Summary      Установка нового пароля
 // @Description  Устанавливает новый пароль по токену из письма. Токен действителен ограниченное время (15 минут).
 // @Tags         auth
 // @Accept       json
