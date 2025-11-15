@@ -36,7 +36,7 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
-		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE mail = $1", userData.Mail)
+		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE mail = $1", userData.Email)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
 				Error:   err.Error(),
@@ -53,7 +53,7 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 		c.JSON(200, models.DeleteUserResponse{
 			Deleted: true,
-			Mail:    userData.Mail,
+			Email:   userData.Email,
 		})
 		return
 	}

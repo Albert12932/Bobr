@@ -32,20 +32,20 @@ services:
     networks:
       - internal
 
-  caddy:
-    image: caddy:2
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./build/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - app
-    networks:
-      - internal
+#  caddy:
+#    image: caddy:2
+#    restart: unless-stopped
+#    ports:
+#      - "80:80"
+#      - "443:443"
+#    volumes:
+#      - ./build/Caddyfile:/etc/caddy/Caddyfile:ro
+#      - caddy_data:/data
+#      - caddy_config:/config
+#    depends_on:
+#      - app
+#    networks:
+#      - internal
 
 volumes:
   pgdata:

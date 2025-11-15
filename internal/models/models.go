@@ -7,7 +7,7 @@ type AuthBookRequest struct {
 }
 
 type DeleteUserRequest struct {
-	Mail string `json:"mail"`
+	Email string `json:"email"`
 }
 
 type ErrorResponse struct {
@@ -17,7 +17,7 @@ type ErrorResponse struct {
 
 type DeleteUserResponse struct {
 	Deleted bool   `json:"deleted"`
-	Mail    string `json:"mail"`
+	Email   string `json:"email"`
 }
 
 type Student struct {
@@ -39,7 +39,7 @@ type User struct {
 	BirthDate  time.Time `json:"birth_date"`
 	Group      string    `json:"student_group" db:"student_group"`
 	Password   []byte    `json:"password"`
-	Mail       string    `json:"mail"`
+	Email      string    `json:"email"`
 	RoleLevel  int64     `json:"role_level"`
 }
 
@@ -54,11 +54,11 @@ type AuthStatus struct {
 type RegisterRequest struct {
 	Token    string `json:"token" binding:"required"`
 	Password string `json:"password"`
-	Mail     string `json:"mail"`
+	Email    string `json:"email"`
 }
 
 type LoginRequest struct {
-	Mail     string `json:"mail" binding:"required"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
@@ -82,9 +82,10 @@ type Session struct {
 type UserSubstructure struct {
 	ID        int64  `json:"id"`
 	BookId    int64  `json:"book_id"`
-	Mail      string `json:"mail"`
+	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	RoleLevel int64  `json:"role_level"`
+	Group     string `json:"group"`
 }
 type LoginResponse struct {
 	UserSubstructure `json:"user"`
@@ -97,12 +98,12 @@ type RefreshTokenResponse struct {
 }
 
 type ResetPasswordRequest struct {
-	Mail string `json:"mail" binding:"required"`
+	Email string `json:"email" binding:"required"`
 }
 
 type ResetPasswordResponse struct {
 	OK      bool   `json:"ok"`
-	Mail    string `json:"mail"`
+	Email   string `json:"email"`
 	Message string `json:"message" default:"If the email is registered, a password reset link has been sent."`
 }
 

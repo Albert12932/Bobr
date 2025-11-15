@@ -52,7 +52,7 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		SELECT id, coalesce(book_id, 0) as book_id, name, surname, password, mail, role_level
 		FROM users
 		WHERE mail = $1
-		`, loginData.Mail)
+		`, loginData.Email)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.JSON(http.StatusNotFound, models.ErrorResponse{
@@ -133,10 +133,11 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		// Возвращаем токен + ответ
 		var resp models.LoginResponse
 		resp.UserSubstructure.ID = user.Id
-		resp.UserSubstructure.Mail = user.Mail
+		resp.UserSubstructure.Email = user.Email
 		resp.UserSubstructure.BookId = user.BookId
 		resp.UserSubstructure.FirstName = user.Name
 		resp.UserSubstructure.RoleLevel = user.RoleLevel
+		resp.UserSubstructure.Group = user.Group
 		resp.Session.Auth.AccessToken = accessToken
 		resp.Session.Auth.RefreshToken = refreshToken
 		resp.Session.Auth.ExpiresAt = exp
