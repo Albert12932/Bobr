@@ -37,7 +37,7 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
-		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE mail = $1", userData.Mail)
+		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE email = $1", userData.Email)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
 				Error:   err.Error(),
@@ -54,7 +54,7 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 		c.JSON(200, models.DeleteUserResponse{
 			Deleted: true,
-			Mail:    userData.Mail,
+			Email:   userData.Email,
 		})
 		return
 	}
@@ -126,7 +126,7 @@ func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		defer cancel()
 		err := pgxscan.Select(ctx, pool, &users,
-			"SELECT id, COALESCE(book_id, 0) as book_id, surname, name, middle_name, coalesce(birth_date, '1970-01-01'::timestamp) as birth_date, coalesce(student_group, '') as student_group, password, mail, role_level FROM users where role_level <= $1", payload.RoleLevel)
+			"SELECT id, COALESCE(book_id, 0) as book_id, surname, name, middle_name, coalesce(birth_date, '1970-01-01'::timestamp) as birth_date, coalesce(student_group, '') as student_group, password, email, role_level FROM users where role_level <= $1", payload.RoleLevel)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
@@ -220,7 +220,7 @@ func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
 //				surname = coalesce($3, surname),
 //				middle_name = coalesce($4, middle_name),
 //				student_group = coalesce($5, student_group),
-//				mail = coalesce($6, mail),
+//				email = coalesce($6, email),
 //				role_level = coalesce($7, role_level)
 //				where id = $8`,
 //			patchData.NewData.BookId,
@@ -228,7 +228,7 @@ func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
 //			patchData.NewData.Surname,
 //			patchData.NewData.MiddleName,
 //			patchData.NewData.StudentGroup,
-//			patchData.NewData.Mail,
+//			patchData.NewData.Email,
 //			patchData.NewData.RoleLevel,
 //			patchData.UserId,
 //		)
@@ -256,7 +256,7 @@ func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
 //		resp.New.Surname = patchData.NewData.Surname
 //		resp.New.MiddleName = patchData.NewData.MiddleName
 //		resp.New.StudentGroup = patchData.NewData.StudentGroup
-//		resp.New.Mail = patchData.NewData.Mail
+//		resp.New.Email = patchData.NewData.Email
 //		resp.New.RoleLevel = patchData.NewData.RoleLevel
 //
 //		c.JSON(200, resp)

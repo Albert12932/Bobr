@@ -586,7 +586,7 @@ const docTemplate = `{
         "models.DeleteUserRequest": {
             "type": "object",
             "properties": {
-                "mail": {
+                "email": {
                     "type": "string"
                 }
             }
@@ -597,7 +597,7 @@ const docTemplate = `{
                 "deleted": {
                     "type": "boolean"
                 },
-                "mail": {
+                "email": {
                     "type": "string"
                 }
             }
@@ -616,11 +616,11 @@ const docTemplate = `{
         "models.LoginRequest": {
             "type": "object",
             "required": [
-                "mail",
+                "email",
                 "password"
             ],
             "properties": {
-                "mail": {
+                "email": {
                     "type": "string"
                 },
                 "password": {
@@ -649,7 +649,7 @@ const docTemplate = `{
                     "type": "integer",
                     "format": "int64"
                 },
-                "mail": {
+                "email": {
                     "type": "string"
                 },
                 "middleName": {
@@ -695,7 +695,7 @@ const docTemplate = `{
                 "token"
             ],
             "properties": {
-                "mail": {
+                "email": {
                     "type": "string"
                 },
                 "password": {
@@ -720,10 +720,10 @@ const docTemplate = `{
         "models.ResetPasswordRequest": {
             "type": "object",
             "required": [
-                "mail"
+                "email"
             ],
             "properties": {
-                "mail": {
+                "email": {
                     "type": "string"
                 }
             }
@@ -731,7 +731,7 @@ const docTemplate = `{
         "models.ResetPasswordResponse": {
             "type": "object",
             "properties": {
-                "mail": {
+                "email": {
                     "type": "string"
                 },
                 "message": {
@@ -804,11 +804,11 @@ const docTemplate = `{
                 "book_id": {
                     "type": "integer"
                 },
+                "email": {
+                    "type": "string"
+                },
                 "id": {
                     "type": "integer"
-                },
-                "mail": {
-                    "type": "string"
                 },
                 "middle_name": {
                     "type": "string"
@@ -839,17 +839,20 @@ const docTemplate = `{
                 "book_id": {
                     "type": "integer"
                 },
+                "email": {
+                    "type": "string"
+                },
                 "first_name": {
                     "type": "string"
                 },
                 "id": {
                     "type": "integer"
                 },
-                "mail": {
-                    "type": "string"
-                },
                 "role_level": {
                     "type": "integer"
+                },
+                "student_group": {
+                    "type": "string"
                 }
             }
         }

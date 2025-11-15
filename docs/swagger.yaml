@@ -28,14 +28,14 @@ definitions:
     type: object
   models.DeleteUserRequest:
     properties:
-      mail:
+      email:
         type: string
     type: object
   models.DeleteUserResponse:
     properties:
       deleted:
         type: boolean
-      mail:
+      email:
         type: string
     type: object
   models.ErrorResponse:
@@ -47,12 +47,12 @@ definitions:
     type: object
   models.LoginRequest:
     properties:
-      mail:
+      email:
         type: string
       password:
         type: string
     required:
-    - mail
+    - email
     - password
     type: object
   models.LoginResponse:
@@ -69,7 +69,7 @@ definitions:
       bookId:
         format: int64
         type: integer
-      mail:
+      email:
         type: string
       middleName:
         type: string
@@ -97,7 +97,7 @@ definitions:
     type: object
   models.RegisterRequest:
     properties:
-      mail:
+      email:
         type: string
       password:
         type: string
@@ -115,14 +115,14 @@ definitions:
     type: object
   models.ResetPasswordRequest:
     properties:
-      mail:
+      email:
         type: string
     required:
-    - mail
+    - email
     type: object
   models.ResetPasswordResponse:
     properties:
-      mail:
+      email:
         type: string
       message:
         default: If the email is registered, a password reset link has been sent.
@@ -170,10 +170,10 @@ definitions:
         type: string
       book_id:
         type: integer
+      email:
+        type: string
       id:
         type: integer
-      mail:
-        type: string
       middle_name:
         type: string
       name:
@@ -193,14 +193,16 @@ definitions:
     properties:
       book_id:
         type: integer
+      email:
+        type: string
       first_name:
         type: string
       id:
         type: integer
-      mail:
-        type: string
       role_level:
         type: integer
+      student_group:
+        type: string
     type: object
 info:
   contact: {}

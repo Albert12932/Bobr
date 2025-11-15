@@ -45,7 +45,7 @@ func GetProfile(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		var profileData models.ProfileResponse
 
-		err := pgxscan.Get(ctx, pool, &profileData, `select coalesce(book_id, 0) as book_id, name, surname, middle_name, coalesce(birth_date, TO_DATE('01.01.1970', 'DD:MM:YYYY')) as birth_date, coalesce(student_group, '') as student_group, mail, role_level from users where id = $1`, payload.Sub)
+		err := pgxscan.Get(ctx, pool, &profileData, `select coalesce(book_id, 0) as book_id, name, surname, middle_name, coalesce(birth_date, TO_DATE('01.01.1970', 'DD:MM:YYYY')) as birth_date, coalesce(student_group, '') as student_group, email, role_level from users where id = $1`, payload.Sub)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 				Error:   err.Error(),

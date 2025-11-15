@@ -47,7 +47,7 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 		// Проверяем, что пользователь с такой почтой существует
 		var userId int64
 		err := pool.QueryRow(ctx,
-			`SELECT id FROM users WHERE mail = $1`, body.Mail).Scan(&userId)
+			`SELECT id FROM users WHERE email = $1`, body.Email).Scan(&userId)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
 				Error:   err.Error(),
@@ -72,13 +72,13 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 		createdAt := time.Now()
 
 		// Сброс пароля
-		_, err = pool.Exec(ctx, `INSERT into reset_password_tokens (user_id, mail, token_hash, expires_at, created_at) 
+		_, err = pool.Exec(ctx, `INSERT into reset_password_tokens (user_id, email, token_hash, expires_at, created_at) 
 			VALUES ($1, $2, $3, $4, $5)
 			ON CONFLICT (user_id)
 			DO UPDATE SET token_hash = EXCLUDED.token_hash,
 			expires_at = EXCLUDED.expires_at,
 			created_at = now();`,
-			userId, body.Mail, tokenHash, expiresAt, createdAt)
+			userId, body.Email, tokenHash, expiresAt, createdAt)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
 				Error:   err.Error(),
@@ -89,7 +89,7 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		from := os.Getenv("FROM_EMAIL")
 		pass := os.Getenv("EMAIL_PASSWORD")
-		to := body.Mail
+		to := body.Email
 
 		htmlBody := `
 			<h2>Здравствуйте!</h2>
@@ -128,7 +128,7 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		c.JSON(200, models.ResetPasswordResponse{
 			OK:      true,
-			Mail:    body.Mail,
+			Email:   body.Email,
 			Message: "Инструкция по сбросу пароля отправлена на указанную почту",
 		})
 		return

@@ -53,11 +53,11 @@ func RegisterByToken(pool *pgxpool.Pool, accessJwtMaker *helpers.JWTMaker) gin.H
 		}
 
 		// Проверяем валидность почты регулярным выражением
-		validMail := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`).MatchString(body.Mail)
+		validMail := regexp.MustCompile(`^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$`).MatchString(body.Email)
 		if !validMail {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
-					Error:   "Wrong mail",
+					Error:   "Wrong email",
 					Message: "Неправильный формат почты"})
 			return
 		}
@@ -65,7 +65,7 @@ func RegisterByToken(pool *pgxpool.Pool, accessJwtMaker *helpers.JWTMaker) gin.H
 		// Проверяем есть ли пользователь с такой почтой
 		var used bool
 		err := pool.QueryRow(c.Request.Context(),
-			`SELECT EXISTS(SELECT 1 FROM users WHERE mail = $1)`, body.Mail).Scan(&used)
+			`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, body.Email).Scan(&used)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
@@ -76,7 +76,7 @@ func RegisterByToken(pool *pgxpool.Pool, accessJwtMaker *helpers.JWTMaker) gin.H
 		if used {
 			c.JSON(http.StatusConflict,
 				models.ErrorResponse{
-					Error:   "Mail already used",
+					Error:   "Email already used",
 					Message: "Почта уже используется"})
 			return
 		}
@@ -154,12 +154,12 @@ func RegisterByToken(pool *pgxpool.Pool, accessJwtMaker *helpers.JWTMaker) gin.H
 		var userID int64
 		roleLevel := int64(10)
 		err = tx.QueryRow(ctx, `
-			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password, mail, role_level)
+			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password, email, role_level)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			RETURNING id
 		`,
 			student.BookId, student.Name, student.Surname, student.MiddleName, student.Group, student.BirthDate,
-			hash, body.Mail, roleLevel).Scan(&userID)
+			hash, body.Email, roleLevel).Scan(&userID)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
@@ -190,8 +190,9 @@ func RegisterByToken(pool *pgxpool.Pool, accessJwtMaker *helpers.JWTMaker) gin.H
 		var resp models.RegisterResponse
 		resp.UserSubstructure.ID = userID
 		resp.UserSubstructure.BookId = student.BookId
-		resp.UserSubstructure.Mail = body.Mail
+		resp.UserSubstructure.Email = body.Email
 		resp.UserSubstructure.FirstName = student.Name
+		resp.UserSubstructure.Group = student.Group
 		resp.UserSubstructure.RoleLevel = roleLevel
 		resp.Auth.AccessToken = accessToken
 		resp.Auth.ExpUnix = exp

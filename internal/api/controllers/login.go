@@ -50,14 +50,14 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		var user models.User
 
 		err := pgxscan.Get(ctx, pool, &user, `
-		SELECT id, coalesce(book_id, 0) as book_id, name, surname, password, mail, role_level
+		SELECT id, coalesce(book_id, 0) as book_id, name, surname, password, email, role_level
 		FROM users
-		WHERE mail = $1
-		`, loginData.Mail)
+		WHERE email = $1
+		`, loginData.Email)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.JSON(http.StatusNotFound, models.ErrorResponse{
-					Error:   "Wrong mail",
+					Error:   "Wrong email",
 					Message: "Не удалось найти пользователя с такой почтой",
 				})
 				return
@@ -89,10 +89,11 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		// Возвращаем токен + ответ
 		var resp models.LoginResponse
 		resp.UserSubstructure.ID = user.Id
-		resp.UserSubstructure.Mail = user.Mail
+		resp.UserSubstructure.Email = user.Email
 		resp.UserSubstructure.BookId = user.BookId
 		resp.UserSubstructure.FirstName = user.Name
 		resp.UserSubstructure.RoleLevel = user.RoleLevel
+		resp.UserSubstructure.Group = user.Group
 		resp.Auth.AccessToken = accessToken
 		resp.Auth.RefreshToken = refreshToken
 		resp.Auth.ExpUnix = exp

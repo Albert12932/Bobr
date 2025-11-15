@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS users (
                        birth_date date,
                        student_group text,
                        password bytea,
-                       mail text not null,
-                    role_level int not null REFERENCES roles(level)
+                       email text not null,
+                       role_level int not null REFERENCES roles(level)
 );
 CREATE TABLE IF NOT EXISTS students (
                           id serial primary key,
@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 );
 CREATE TABLE IF NOT EXISTS reset_password_tokens (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    mail TEXT NOT NULL,
+    email TEXT NOT NULL,
     token_hash BYTEA NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
