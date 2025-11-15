@@ -14,7 +14,8 @@ import (
 	"time"
 )
 
-// Login @Summary      Авторизация пользователя
+// Login Авторизация пользователя
+// @Summary      Авторизация пользователя
 // @Description  Проверяет почту и пароль пользователя.
 // @Description  При успешной авторизации выдает пару access и refresh токенов.
 // @Tags         auth
@@ -49,14 +50,14 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		var user models.User
 
 		err := pgxscan.Get(ctx, pool, &user, `
-		SELECT id, coalesce(book_id, 0) as book_id, name, surname, password, mail, role_level
+		SELECT id, coalesce(book_id, 0) as book_id, name, surname, password, email, role_level
 		FROM users
-		WHERE mail = $1
+		WHERE email = $1
 		`, loginData.Email)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
 				c.JSON(http.StatusNotFound, models.ErrorResponse{
-					Error:   "Wrong mail",
+					Error:   "Wrong email",
 					Message: "Не удалось найти пользователя с такой почтой",
 				})
 				return
@@ -77,56 +78,11 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 			return
 		}
 
-		// Создаем access токен
-		accessToken, exp, err := AccessJwtMaker.Issue(user.Id, user.RoleLevel)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error":   err.Error(),
-				"message": "JWT_ERROR",
-			})
-			return
-		}
-
-		// Удаляем прошлые refresh токены пользователя TODO fingerprints
-		Tag, err := pool.Exec(ctx, `
-			DELETE FROM refresh_tokens
-			WHERE user_id = $1
-		`, user.Id)
-		if err != nil {
+		accessToken, exp, refreshToken, errResponse := GetPairOfTokens(pool, AccessJwtMaker,
+			models.GetTokensRequest{UserId: user.Id, RoleLevel: user.RoleLevel})
+		if errResponse != (models.ErrorResponse{}) {
 			c.JSON(http.StatusInternalServerError,
-				models.ErrorResponse{
-					Error:   err.Error(),
-					Message: "Не удалось удалить старые refresh token"})
-			return
-		}
-
-		// Создаем refresh token
-		refreshToken, err := helpers.NewRefreshToken()
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-				Error:   err.Error(),
-				Message: "Не удалось создать refresh token",
-			})
-			return
-		}
-
-		// Сохраняем новый refresh token в бд
-		Tag, err = pool.Exec(ctx, `
-			INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
-			VALUES ($1, $2, $3)
-		`, user.Id, helpers.HashToken(refreshToken), time.Now().Add(30*24*time.Hour)) // 30 дней`)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError,
-				models.ErrorResponse{
-					Error:   err.Error(),
-					Message: "Не удалось сохранить refresh token"})
-			return
-		}
-		if Tag.RowsAffected() != 1 {
-			c.JSON(http.StatusInternalServerError,
-				models.ErrorResponse{
-					Error:   "RowsAffected != 1",
-					Message: "Не удалось сохранить refresh token"})
+				errResponse)
 			return
 		}
 
@@ -138,9 +94,9 @@ func Login(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.HandlerFunc
 		resp.UserSubstructure.FirstName = user.Name
 		resp.UserSubstructure.RoleLevel = user.RoleLevel
 		resp.UserSubstructure.Group = user.Group
-		resp.Session.Auth.AccessToken = accessToken
-		resp.Session.Auth.RefreshToken = refreshToken
-		resp.Session.Auth.ExpiresAt = exp
+		resp.Auth.AccessToken = accessToken
+		resp.Auth.RefreshToken = refreshToken
+		resp.Auth.ExpUnix = exp
 
 		c.Header("Cache-Control", "no-store")
 		c.JSON(http.StatusOK, resp)
@@ -164,7 +120,8 @@ func getRefreshTokenUserId(pool *pgxpool.Pool, refreshToken string) (int64, erro
 	return userId, nil
 }
 
-// RefreshToken @Summary      Обновление access и refresh токенов
+// RefreshToken Обновление access и refresh токенов
+// @Summary      Обновление access и refresh токенов
 // @Description  Принимает refresh токен, проверяет его валидность и возвращает новую пару токенов.
 // @Tags         auth
 // @Accept       json
@@ -270,8 +227,64 @@ func RefreshToken(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker) gin.Hand
 		resp.UserID = userId
 		resp.Auth.AccessToken = accessToken
 		resp.Auth.RefreshToken = newRefreshToken
-		resp.Auth.ExpiresAt = exp
+		resp.Auth.ExpUnix = exp
 
 		c.JSON(200, resp)
 	}
+}
+
+func GetPairOfTokens(pool *pgxpool.Pool, AccessJwtMaker *helpers.JWTMaker, userData models.GetTokensRequest) (AccessToken string, AccessTokenExp int64, RefreshToken string, errResp models.ErrorResponse) {
+
+	// Создаем контекст с таймаутом 5 сек
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	// Создаем access токен
+	accessToken, exp, err := AccessJwtMaker.Issue(userData.UserId, userData.RoleLevel)
+	if err != nil {
+		return "", 0, "",
+			models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "JWT_ERROR"}
+	}
+
+	// Удаляем прошлые refresh токены пользователя TODO fingerprints
+	Tag, err := pool.Exec(ctx, `
+			DELETE FROM refresh_tokens
+			WHERE user_id = $1
+		`, userData.UserId)
+	if err != nil {
+		return "", 0, "",
+			models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Не удалось удалить старые refresh token"}
+	}
+
+	// Создаем refresh token
+	refreshToken, err := helpers.NewRefreshToken()
+	if err != nil {
+		return "", 0, "", models.ErrorResponse{
+			Error:   err.Error(),
+			Message: "Не удалось создать refresh token",
+		}
+	}
+
+	// Сохраняем новый refresh token в бд
+	Tag, err = pool.Exec(ctx, `
+			INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
+			VALUES ($1, $2, $3)
+		`, userData.UserId, helpers.HashToken(refreshToken), time.Now().Add(30*24*time.Hour)) // 30 дней`)
+	if err != nil {
+		return "", 0, "",
+			models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Не удалось сохранить refresh token"}
+	}
+	if Tag.RowsAffected() != 1 {
+		return "", 0, "",
+			models.ErrorResponse{
+				Error:   "RowsAffected != 1",
+				Message: "Не удалось сохранить refresh token"}
+	}
+
+	return accessToken, exp, refreshToken, models.ErrorResponse{}
 }

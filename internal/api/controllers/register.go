@@ -16,20 +16,21 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// RegisterByToken @Summary      Регистрация пользователя по токену
+// RegisterByToken  Регистрация пользователя по токену
+// @Summary      Регистрация пользователя по токену
 // @Description  Регистрирует нового пользователя на основе временного токена, выданного после проверки студенческого билета.
 // @Tags         auth
 // @Accept       json
 // @Produce      json
 // @Param        input  body  models.RegisterRequest  true  "Почта, пароль и токен регистрации пользователя"
-// @Success      200  {object}  models.RegisterResponse     "Успешная регистрация" example({"ok":true,"user":{"id":1,"first_name":"Иван","surname":"Иванов"}})
+// @Success      200  {object}  models.RegisterResponse     "Успешная регистрация"
 // @Failure      400  {object}  models.ErrorResponse        "Некорректный запрос или формат данных"
 // @Failure      401  {object}  models.ErrorResponse        "Токен не найден или истёк"
 // @Failure      404  {object}  models.ErrorResponse        "Студент с такой почтой не найден"
 // @Failure      409  {object}  models.ErrorResponse        "Пользователь с такой почтой уже существует"
 // @Failure      500  {object}  models.ErrorResponse        "Ошибка сервера (база данных, хеширование, транзакция)"
 // @Router       /auth/register [post]
-func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
+func RegisterByToken(pool *pgxpool.Pool, accessJwtMaker *helpers.JWTMaker) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		// Берем пароль и почту из тела запроса в json
@@ -56,7 +57,7 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 		if !validMail {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
-					Error:   "Wrong mail",
+					Error:   "Wrong email",
 					Message: "Неправильный формат почты"})
 			return
 		}
@@ -64,7 +65,7 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 		// Проверяем есть ли пользователь с такой почтой
 		var used bool
 		err := pool.QueryRow(c.Request.Context(),
-			`SELECT EXISTS(SELECT 1 FROM users WHERE mail = $1)`, body.Email).Scan(&used)
+			`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`, body.Email).Scan(&used)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError,
 				models.ErrorResponse{
@@ -75,7 +76,7 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 		if used {
 			c.JSON(http.StatusConflict,
 				models.ErrorResponse{
-					Error:   "Mail already used",
+					Error:   "Email already used",
 					Message: "Почта уже используется"})
 			return
 		}
@@ -153,7 +154,7 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 		var userID int64
 		roleLevel := int64(10)
 		err = tx.QueryRow(ctx, `
-			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password, mail, role_level)
+			INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date, password, email, role_level)
 			VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 			RETURNING id
 		`,
@@ -177,15 +178,25 @@ func RegisterByToken(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
+		accessToken, exp, refreshToken, errResp := GetPairOfTokens(pool, accessJwtMaker,
+			models.GetTokensRequest{UserId: userID, RoleLevel: roleLevel})
+
+		if errResp != (models.ErrorResponse{}) {
+			c.JSON(http.StatusInternalServerError, errResp)
+			return
+		}
+
 		// Выдаем ответ в нужном формате
 		var resp models.RegisterResponse
-		resp.OK = true
 		resp.UserSubstructure.ID = userID
 		resp.UserSubstructure.BookId = student.BookId
 		resp.UserSubstructure.Email = body.Email
 		resp.UserSubstructure.FirstName = student.Name
 		resp.UserSubstructure.Group = student.Group
 		resp.UserSubstructure.RoleLevel = roleLevel
+		resp.Auth.AccessToken = accessToken
+		resp.Auth.ExpUnix = exp
+		resp.Auth.RefreshToken = refreshToken
 
 		// на всякий случай отключим кеш
 		c.Header("Cache-Control", "no-store")
