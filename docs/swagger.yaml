@@ -62,6 +62,62 @@ definitions:
       user:
         $ref: '#/definitions/models.UserSubstructure'
     type: object
+  models.PatchUserRequest:
+    properties:
+      new_data:
+        properties:
+          book_id:
+            type: integer
+          email:
+            example: ""
+            type: string
+          middle_name:
+            example: ""
+            type: string
+          name:
+            example: ""
+            type: string
+          role_level:
+            type: integer
+          student_group:
+            example: ""
+            type: string
+          surname:
+            example: ""
+            type: string
+        type: object
+      user_id:
+        type: integer
+    type: object
+  models.PatchUserResponse:
+    properties:
+      new:
+        properties:
+          book_id:
+            type: integer
+          email:
+            example: ""
+            type: string
+          middle_name:
+            example: ""
+            type: string
+          name:
+            example: ""
+            type: string
+          role_level:
+            type: integer
+          student_group:
+            example: ""
+            type: string
+          surname:
+            example: ""
+            type: string
+        type: object
+      successful:
+        type: boolean
+      user_id:
+        type: integer
+    type: object
   models.ProfileResponse:
     properties:
       birthDate:
@@ -275,6 +331,48 @@ paths:
       security:
       - BearerAuth: []
       summary: Получение списка студентов
+      tags:
+      - admin
+  /admin/update_user:
+    patch:
+      consumes:
+      - application/json
+      description: Обновляет данные пользователя с проверкой прав доступа. Только
+        пользователи с более высоким уровнем прав могут изменять данные пользователей
+        с более низким уровнем прав.
+      parameters:
+      - default: Bearer
+        description: 'Bearer токен в формате: Bearer {token} default(Bearer )'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Данные для обновления пользователя
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.PatchUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Успешное обновление данных пользователя
+          schema:
+            $ref: '#/definitions/models.PatchUserResponse'
+        "400":
+          description: Ошибка в формате JSON
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "403":
+          description: Недостаточно прав
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Внутренняя ошибка сервера
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Обновление данных пользователя
       tags:
       - admin
   /admin/users:
