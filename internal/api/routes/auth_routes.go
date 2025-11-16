@@ -32,7 +32,7 @@ func AdminRoutes(r *gin.Engine, db *pgxpool.Pool, accessJWTMaker *helpers.JWTMak
 	adminHandlersGroup.DELETE("/delete_user", controllers.DeleteUser(db))
 	adminHandlersGroup.GET("/students", controllers.GetStudents(db))
 	adminHandlersGroup.GET("/users", controllers.GetUsers(db))
-	//adminHandlersGroup.PATCH("/update_user", controllers.PatchUser(db))
+	adminHandlersGroup.PATCH("/update_user", controllers.PatchUser(db))
 }
 
 func UserRoutes(r *gin.Engine, db *pgxpool.Pool, accessJWTMaker *helpers.JWTMaker) {

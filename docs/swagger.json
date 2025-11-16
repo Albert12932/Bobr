@@ -113,6 +113,66 @@
                 }
             }
         },
+        "/admin/update_user": {
+            "patch": {
+                "description": "Обновляет данные пользователя с проверкой прав доступа. Только пользователи с более высоким уровнем прав могут изменять данные пользователей с более низким уровнем прав.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Обновление данных пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "default": "Bearer",
+                        "description": "Bearer токен в формате: Bearer {token} default(Bearer )",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные для обновления пользователя",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PatchUserRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Успешное обновление данных пользователя",
+                        "schema": {
+                            "$ref": "#/definitions/models.PatchUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Ошибка в формате JSON",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Недостаточно прав",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Внутренняя ошибка сервера",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/users": {
             "get": {
                 "security": [
@@ -625,6 +685,87 @@
                 },
                 "user": {
                     "$ref": "#/definitions/models.UserSubstructure"
+                }
+            }
+        },
+        "models.PatchUserRequest": {
+            "type": "object",
+            "properties": {
+                "new_data": {
+                    "type": "object",
+                    "properties": {
+                        "book_id": {
+                            "type": "integer"
+                        },
+                        "email": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "middle_name": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "name": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "role_level": {
+                            "type": "integer"
+                        },
+                        "student_group": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "surname": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    }
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.PatchUserResponse": {
+            "type": "object",
+            "properties": {
+                "new": {
+                    "type": "object",
+                    "properties": {
+                        "book_id": {
+                            "type": "integer"
+                        },
+                        "email": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "middle_name": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "name": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "role_level": {
+                            "type": "integer"
+                        },
+                        "student_group": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "surname": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    }
+                },
+                "successful": {
+                    "type": "boolean"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

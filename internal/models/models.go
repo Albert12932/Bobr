@@ -151,12 +151,12 @@ type ProfileResponse struct {
 type PatchUserRequest struct {
 	UserId  int64 `json:"user_id"`
 	NewData struct {
-		BookId       int64  `json:"book_id,omitempty"`
-		Name         string `json:"name,omitempty"`
-		Surname      string `json:"surname,omitempty"`
-		MiddleName   string `json:"middle_name,omitempty"`
-		StudentGroup string `json:"student_group,omitempty"`
-		Email        string `json:"email,omitempty"`
+		BookId       int64  `json:"book_id,omitempty" `
+		Name         string `json:"name,omitempty" example:""`
+		Surname      string `json:"surname,omitempty" example:""`
+		MiddleName   string `json:"middle_name,omitempty" example:""`
+		StudentGroup string `json:"student_group,omitempty" example:""`
+		Email        string `json:"email,omitempty" example:""`
 		RoleLevel    int64  `json:"role_level,omitempty"`
 	} `json:"new_data"`
 }
@@ -166,11 +166,11 @@ type PatchUserResponse struct {
 	UserID     int64 `json:"user_id"`
 	New        struct {
 		BookId       int64  `json:"book_id,omitempty"`
-		Name         string `json:"name,omitempty"`
-		Surname      string `json:"surname,omitempty"`
-		MiddleName   string `json:"middle_name,omitempty"`
-		StudentGroup string `json:"student_group,omitempty"`
-		Mail         string `json:"mail,omitempty"`
+		Name         string `json:"name,omitempty" example:""`
+		Surname      string `json:"surname,omitempty" example:""`
+		MiddleName   string `json:"middle_name,omitempty" example:""`
+		StudentGroup string `json:"student_group,omitempty" example:""`
+		Email        string `json:"email,omitempty" example:""`
 		RoleLevel    int64  `json:"role_level,omitempty"`
 	}
 }

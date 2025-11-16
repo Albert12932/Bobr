@@ -3,6 +3,7 @@ package controllers
 import (
 	"bobri/internal/models"
 	"context"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -147,121 +148,139 @@ func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
 // @Tags admin
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer токен в формате: Bearer {token}"
+// @Param Authorization header string true "Bearer токен в формате: Bearer {token} default(Bearer )"
 // @Param request body models.PatchUserRequest true "Данные для обновления пользователя"
 // @Success 200 {object} models.PatchUserResponse "Успешное обновление данных пользователя"
 // @Failure 400 {object} models.ErrorResponse "Ошибка в формате JSON"
 // @Failure 403 {object} models.ErrorResponse "Недостаточно прав"
 // @Failure 500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
 // @Router /admin/update_user [patch]
-//func PatchUser(pool *pgxpool.Pool) gin.HandlerFunc {
-//	return func(c *gin.Context) {
-//
-//		var patchData models.PatchUserRequest
-//		if err := c.ShouldBindJSON(&patchData); err != nil {
-//			c.JSON(400, models.ErrorResponse{
-//				Error:   err.Error(),
-//				Message: "Error while marshaling JSON",
-//			})
-//			return
-//		}
-//
-//		payloadInterface, existsPayload := c.Get("userPayload")
-//		if !existsPayload {
-//			c.JSON(http.StatusInternalServerError,
-//				models.ErrorResponse{
-//					Error:   "Payload doesn't exist",
-//					Message: "Данные о пользователе в JWT Токене (Payload) не найдены",
-//				})
-//			return
-//		}
-//
-//		// Преобразуем payload в наш тип
-//		payload := payloadInterface.(*models.Payload)
-//		adminRoleLevel := payload.RoleLevel
-//
-//		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-//		defer cancel()
-//
-//		if patchData.NewData.RoleLevel != 0 {
-//			var exists bool
-//			err := pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM roles WHERE level = $1)", patchData.NewData.RoleLevel).Scan(&exists)
-//			if err != nil {
-//				c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-//					Error:   err.Error(),
-//					Message: "Не удалось проверить наличие роли",
-//				})
-//				return
-//			}
-//		}
-//
-//		var curRoleLevel, curBookId int64
-//
-//		err := pool.QueryRow(ctx, "SELECT role_level, book_id FROM users WHERE id = $1", patchData.UserId).Scan(&curRoleLevel, &curBookId)
-//		if err != nil {
-//			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-//				Error:   err.Error(),
-//				Message: "Ошибка при получении текущего уровня роли пользователя",
-//			})
-//			return
-//		}
-//
-//		if patchData.NewData.RoleLevel >= adminRoleLevel || curRoleLevel >= adminRoleLevel {
-//			c.JSON(http.StatusForbidden, models.ErrorResponse{
-//				Error:   "Forbidden",
-//				Message: "Не достаточно прав",
-//			})
-//			return
-//		}
-//
-//		tag, err := pool.Exec(ctx, `UPDATE users set
-//                 book_id = coalesce($1, book_id),
-//				name = coalesce($2, name),
-//				surname = coalesce($3, surname),
-//				middle_name = coalesce($4, middle_name),
-//				student_group = coalesce($5, student_group),
-//				email = coalesce($6, email),
-//				role_level = coalesce($7, role_level)
-//				where id = $8`,
-//			patchData.NewData.BookId,
-//			patchData.NewData.Name,
-//			patchData.NewData.Surname,
-//			patchData.NewData.MiddleName,
-//			patchData.NewData.StudentGroup,
-//			patchData.NewData.Email,
-//			patchData.NewData.RoleLevel,
-//			patchData.UserId,
-//		)
-//		if err != nil {
-//			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-//				Error:   err.Error(),
-//				Message: "Ошибка при обновлении данных пользователя",
-//			})
-//			return
-//		}
-//		if tag.RowsAffected() != 1 {
-//			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
-//				Error:   err.Error(),
-//				Message: "Ошибка при обновлении данных пользователя (RowsAffected != 1)",
-//			})
-//			return
-//		}
-//
-//		var resp models.PatchUserResponse
-//
-//		resp.UserID = patchData.UserId
-//		resp.Successful = true
-//		resp.New.BookId = patchData.NewData.BookId
-//		resp.New.Name = patchData.NewData.Name
-//		resp.New.Surname = patchData.NewData.Surname
-//		resp.New.MiddleName = patchData.NewData.MiddleName
-//		resp.New.StudentGroup = patchData.NewData.StudentGroup
-//		resp.New.Email = patchData.NewData.Email
-//		resp.New.RoleLevel = patchData.NewData.RoleLevel
-//
-//		c.JSON(200, resp)
-//
-//		return
-//
-//	}
-//}
+func PatchUser(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		var patchData models.PatchUserRequest
+		if err := c.ShouldBindJSON(&patchData); err != nil {
+			c.JSON(400, models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Error while marshaling JSON",
+			})
+			return
+		}
+
+		payloadInterface, existsPayload := c.Get("userPayload")
+		if !existsPayload {
+			c.JSON(http.StatusInternalServerError,
+				models.ErrorResponse{
+					Error:   "Payload doesn't exist",
+					Message: "Данные о пользователе в JWT Токене (Payload) не найдены",
+				})
+			return
+		}
+
+		// Преобразуем payload в наш тип
+		payload := payloadInterface.(*models.Payload)
+		adminRoleLevel := payload.RoleLevel
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		if patchData.NewData.RoleLevel != 0 {
+			var exists bool
+			err := pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM roles WHERE level = $1)", patchData.NewData.RoleLevel).Scan(&exists)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+					Error:   err.Error(),
+					Message: "Не удалось проверить наличие роли",
+				})
+				return
+			}
+		}
+
+		var curRoleLevel, curBookId int64
+
+		err := pool.QueryRow(ctx, "SELECT role_level, book_id FROM users WHERE id = $1", patchData.UserId).Scan(&curRoleLevel, &curBookId)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Ошибка при получении текущего уровня роли пользователя",
+			})
+			return
+		}
+
+		if patchData.NewData.RoleLevel >= adminRoleLevel || curRoleLevel >= adminRoleLevel {
+			c.JSON(http.StatusForbidden, models.ErrorResponse{
+				Error:   "Forbidden",
+				Message: "Не достаточно прав",
+			})
+			return
+		}
+
+		builder := sq.Update("users")
+
+		if patchData.NewData.BookId != 0 {
+			builder = builder.Set("book_id", patchData.NewData.BookId)
+		}
+		if patchData.NewData.Name != "" {
+			builder = builder.Set("name", patchData.NewData.Name)
+		}
+		if patchData.NewData.Surname != "" {
+			builder = builder.Set("surname", patchData.NewData.Surname)
+		}
+		if patchData.NewData.MiddleName != "" {
+			builder = builder.Set("middle_name", patchData.NewData.MiddleName)
+		}
+		if patchData.NewData.StudentGroup != "" {
+			builder = builder.Set("student_group", patchData.NewData.StudentGroup)
+		}
+		if patchData.NewData.Email != "" {
+			builder = builder.Set("email", patchData.NewData.Email)
+		}
+		if patchData.NewData.RoleLevel != 0 {
+			builder = builder.Set("role_level", patchData.NewData.RoleLevel)
+		}
+
+		builder = builder.Where(sq.Eq{"id": patchData.UserId})
+
+		sqlQuery, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Ошибка при обновлении данных пользователя",
+			})
+			return
+		}
+
+		tag, err := pool.Exec(ctx, sqlQuery, args...)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Ошибка при обновлении данных пользователя",
+			})
+			return
+		}
+		if tag.RowsAffected() != 1 {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Ошибка при обновлении данных пользователя (RowsAffected != 1)",
+			})
+			return
+		}
+
+		var resp models.PatchUserResponse
+
+		resp.UserID = patchData.UserId
+		resp.Successful = true
+		resp.New.BookId = patchData.NewData.BookId
+		resp.New.Name = patchData.NewData.Name
+		resp.New.Surname = patchData.NewData.Surname
+		resp.New.MiddleName = patchData.NewData.MiddleName
+		resp.New.StudentGroup = patchData.NewData.StudentGroup
+		resp.New.Email = patchData.NewData.Email
+		resp.New.RoleLevel = patchData.NewData.RoleLevel
+
+		c.JSON(200, resp)
+
+		return
+
+	}
+}
