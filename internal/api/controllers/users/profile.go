@@ -1,4 +1,4 @@
-package controllers
+package users
 
 import (
 	"bobri/internal/models"
@@ -20,7 +20,7 @@ import (
 // @Param        Authorization  header  string  true  "Bearer токен" default(Bearer )
 // @Success      200  {object} models.ProfileResponse               "Данные о пользователе"
 // @Failure      500  {object} models.ErrorResponse       "Ошибка при запросе или чтении данных"
-// @Router       /profile [get]
+// @Router       /me/profile [get]
 func GetProfile(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 

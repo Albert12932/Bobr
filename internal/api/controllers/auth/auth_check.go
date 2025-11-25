@@ -1,4 +1,4 @@
-package controllers
+package auth
 
 import (
 	"bobri/internal/models"
@@ -12,7 +12,7 @@ import (
 	"time"
 )
 
-// AuthCheck Проверка студенческого в системе
+// CheckStudent Проверка студенческого в системе
 // @Summary      Проверка студенческого в системе
 // @Description  Проверяет наличие студенческого билета в системе.
 // @Description  Если студент не зарегистрирован, генерирует временный токен для регистрации.
@@ -27,7 +27,7 @@ import (
 // @Failure      500  {object}  models.ErrorResponse "Ошибка при работе с базой данных"
 // @Failure      500  {object}  models.ErrorResponse "Ошибка при генерации или сохранении токена"
 // @Router       /auth/check [post]
-func AuthCheck(pool *pgxpool.Pool) gin.HandlerFunc {
+func CheckStudent(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		var AuthCheck models.AuthBookRequest
