@@ -26,23 +26,105 @@ definitions:
       status:
         type: string
     type: object
-  models.DeleteUserRequest:
+  models.CompleteUserEventRequest:
     properties:
-      email:
+      event_id:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  models.CompletedEvent:
+    properties:
+      completed_at:
         type: string
+      event_id:
+        type: integer
+      user_id:
+        type: integer
+    type: object
+  models.CreateEventRequest:
+    properties:
+      description:
+        type: string
+      event_date:
+        type: string
+      event_type_code:
+        type: integer
+      icon_url:
+        type: string
+      points:
+        type: integer
+      title:
+        type: string
+    required:
+    - title
+    type: object
+  models.CreateEventResponse:
+    properties:
+      created:
+        type: string
+      description:
+        type: string
+      event_date:
+        type: string
+      event_id:
+        type: integer
+      event_type_code:
+        type: integer
+      icon_url:
+        type: string
+      points:
+        type: integer
+      title:
+        type: string
+    type: object
+  models.DeleteCompletedEventResponse:
+    properties:
+      event_id:
+        type: integer
+      successful:
+        type: boolean
+      user_id:
+        type: integer
+    type: object
+  models.DeleteEventResponse:
+    properties:
+      event_id:
+        type: integer
+      successful:
+        type: boolean
     type: object
   models.DeleteUserResponse:
     properties:
-      deleted:
-        type: boolean
       email:
         type: string
+      successful:
+        type: boolean
     type: object
   models.ErrorResponse:
     properties:
       error:
         type: string
       message:
+        type: string
+    type: object
+  models.Event:
+    properties:
+      created:
+        type: string
+      description:
+        type: string
+      event_date:
+        type: string
+      event_id:
+        type: integer
+      event_type_code:
+        type: integer
+      icon_url:
+        type: string
+      points:
+        type: integer
+      title:
         type: string
     type: object
   models.LoginRequest:
@@ -61,62 +143,6 @@ definitions:
         $ref: '#/definitions/models.Auth'
       user:
         $ref: '#/definitions/models.UserSubstructure'
-    type: object
-  models.PatchUserRequest:
-    properties:
-      new_data:
-        properties:
-          book_id:
-            type: integer
-          email:
-            example: ""
-            type: string
-          middle_name:
-            example: ""
-            type: string
-          name:
-            example: ""
-            type: string
-          role_level:
-            type: integer
-          student_group:
-            example: ""
-            type: string
-          surname:
-            example: ""
-            type: string
-        type: object
-      user_id:
-        type: integer
-    type: object
-  models.PatchUserResponse:
-    properties:
-      new:
-        properties:
-          book_id:
-            type: integer
-          email:
-            example: ""
-            type: string
-          middle_name:
-            example: ""
-            type: string
-          name:
-            example: ""
-            type: string
-          role_level:
-            type: integer
-          student_group:
-            example: ""
-            type: string
-          surname:
-            example: ""
-            type: string
-        type: object
-      successful:
-        type: boolean
-      user_id:
-        type: integer
     type: object
   models.ProfileResponse:
     properties:
@@ -176,16 +202,6 @@ definitions:
     required:
     - email
     type: object
-  models.ResetPasswordResponse:
-    properties:
-      email:
-        type: string
-      message:
-        default: If the email is registered, a password reset link has been sent.
-        type: string
-      ok:
-        type: boolean
-    type: object
   models.SetNewPasswordRequest:
     properties:
       new_password:
@@ -195,13 +211,6 @@ definitions:
     required:
     - new_password
     - token
-    type: object
-  models.SetNewPasswordResponse:
-    properties:
-      message:
-        type: string
-      ok:
-        type: boolean
     type: object
   models.Student:
     properties:
@@ -219,6 +228,89 @@ definitions:
         type: string
       surname:
         type: string
+    type: object
+  models.SuccessResponse:
+    properties:
+      message:
+        type: string
+      successful:
+        type: boolean
+    type: object
+  models.UpdateEventRequest:
+    properties:
+      event_id:
+        type: integer
+      new_data:
+        properties:
+          description:
+            type: string
+          event_date:
+            type: string
+          event_type_code:
+            type: integer
+          icon_url:
+            type: string
+          points:
+            type: integer
+          title:
+            type: string
+        type: object
+    type: object
+  models.UpdateUserRequest:
+    properties:
+      new_data:
+        properties:
+          book_id:
+            type: integer
+          email:
+            example: ""
+            type: string
+          middle_name:
+            example: ""
+            type: string
+          name:
+            example: ""
+            type: string
+          role_level:
+            type: integer
+          student_group:
+            example: ""
+            type: string
+          surname:
+            example: ""
+            type: string
+        type: object
+      user_id:
+        type: integer
+    type: object
+  models.UpdateUserResponse:
+    properties:
+      new:
+        properties:
+          book_id:
+            type: integer
+          email:
+            example: ""
+            type: string
+          middle_name:
+            example: ""
+            type: string
+          name:
+            example: ""
+            type: string
+          role_level:
+            type: integer
+          student_group:
+            example: ""
+            type: string
+          surname:
+            example: ""
+            type: string
+        type: object
+      successful:
+        type: boolean
+      user_id:
+        type: integer
     type: object
   models.User:
     properties:
@@ -245,6 +337,13 @@ definitions:
       surname:
         type: string
     type: object
+  models.UserCompletedEvent:
+    properties:
+      completed_at:
+        type: string
+      event_id:
+        type: integer
+    type: object
   models.UserSubstructure:
     properties:
       book_id:
@@ -263,24 +362,229 @@ definitions:
 info:
   contact: {}
 paths:
-  /admin/delete_user:
-    delete:
+  /admin/add_completed_event:
+    post:
       consumes:
       - application/json
-      description: Удаляет пользователя по адресу почты.
+      description: Добавляет запись о выполнении события конкретным пользователем.
+        Требует прав администратора.
       parameters:
-      - default: Bearer
-        description: Bearer токен
+      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
         type: string
-      - description: Почта
+      - description: ID пользователя и ID события
         in: body
         name: input
         required: true
         schema:
-          $ref: '#/definitions/models.DeleteUserRequest'
+          $ref: '#/definitions/models.CompleteUserEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Событие отмечено как выполненное
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+        "400":
+          description: Некорректные данные или пользователь/событие не существуют
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Нет прав доступа
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "409":
+          description: Событие уже было отмечено ранее
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка сервера при добавлении записи
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Отметить выполнение события
+      tags:
+      - admin
+  /admin/completed_events:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает полный список выполненных событий всех пользователей
+        системы.
+      parameters:
+      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список выполненных событий всех пользователей
+          schema:
+            items:
+              $ref: '#/definitions/models.CompletedEvent'
+            type: array
+        "401":
+          description: Нет прав доступа
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка сервера при получении выполненных событий
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Получить все выполненные события
+      tags:
+      - admin
+  /admin/create_event:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт новое событие в системе и возвращает полную информацию
+        о созданной записи. Требует авторизации администратора. Поля помимо title
+        могут не указываться, тогда они будут заменены на стандартные значения
+      parameters:
+      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Данные нового события
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Событие успешно создано
+          schema:
+            $ref: '#/definitions/models.CreateEventResponse'
+        "400":
+          description: Некорректный JSON или ошибка валидации
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Нет доступа — невалидный или отсутствующий токен
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка сервера при создании события
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Создать событие
+      tags:
+      - admin
+  /admin/delete_completed_event/{user_id}/{event_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет отметку о выполнении события конкретным пользователем.
+        Требует прав администратора.
+      parameters:
+      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID пользователя
+        in: path
+        name: user_id
+        required: true
+        type: integer
+      - description: ID события
+        in: path
+        name: event_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Отметка о выполнении успешно удалена
+          schema:
+            $ref: '#/definitions/models.DeleteCompletedEventResponse'
+        "400":
+          description: Некорректный user_id или event_id
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Нет прав доступа
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Отметка о выполнении не найдена
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка сервера при удалении
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Удаление выполнения события
+      tags:
+      - admin
+  /admin/delete_event/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет событие по его идентификатору. Требует прав администратора.
+      parameters:
+      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID события для удаления
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Событие успешно удалено
+          schema:
+            $ref: '#/definitions/models.DeleteEventResponse'
+        "400":
+          description: Некорректный ID события
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Нет прав доступа
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Событие с указанным ID не найдено
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка сервера при удалении
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Удалить событие
+      tags:
+      - admin
+  /admin/delete_user/{email}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет пользователя по его email. Требует прав администратора.
+      parameters:
+      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Email удаляемого пользователя
+        in: path
+        name: email
+        required: true
+        type: string
       produces:
       - application/json
       responses:
@@ -289,20 +593,49 @@ paths:
           schema:
             $ref: '#/definitions/models.DeleteUserResponse'
         "400":
-          description: Некорректный JSON
+          description: Передан пустой email
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Нет прав доступа к операции
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Пользователь не найден
+          description: Пользователь с таким email не найден
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
-          description: Ошибка при удалении пользователя
+          description: Ошибка сервера при удалении
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      security:
-      - BearerAuth: []
-      summary: Удаление пользователя
+      summary: Удалить пользователя
+      tags:
+      - admin
+  /admin/events:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает полный список событий из базы данных.
+      parameters:
+      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список событий
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+        "500":
+          description: Ошибка сервера при получении списка событий
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Получить все события
       tags:
       - admin
   /admin/students:
@@ -333,6 +666,47 @@ paths:
       summary: Получение списка студентов
       tags:
       - admin
+  /admin/update_event:
+    patch:
+      consumes:
+      - application/json
+      description: |-
+        Производит частичное обновление данных события по его ID.
+        Обновляются только те поля, которые переданы в теле запроса.
+      parameters:
+      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: ID события и новые значения полей
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateEventRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Событие успешно обновлено
+          schema:
+            $ref: '#/definitions/models.SuccessResponse'
+        "400":
+          description: Некорректный JSON или ошибка валидации
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Неавторизованный доступ — неверный или отсутствующий токен
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка сервера при попытке обновления записи
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Обновить выбранные поля события
+      tags:
+      - admin
   /admin/update_user:
     patch:
       consumes:
@@ -352,14 +726,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/models.PatchUserRequest'
+          $ref: '#/definitions/models.UpdateUserRequest'
       produces:
       - application/json
       responses:
         "200":
           description: Успешное обновление данных пользователя
           schema:
-            $ref: '#/definitions/models.PatchUserResponse'
+            $ref: '#/definitions/models.UpdateUserResponse'
         "400":
           description: Ошибка в формате JSON
           schema:
@@ -584,7 +958,9 @@ paths:
         "200":
           description: Инструкция отправлена на почту
           schema:
-            $ref: '#/definitions/models.ResetPasswordResponse'
+            additionalProperties:
+              type: string
+            type: object
         "400":
           description: Некорректный JSON
           schema:
@@ -615,7 +991,7 @@ paths:
         "200":
           description: Пароль успешно обновлён
           schema:
-            $ref: '#/definitions/models.SetNewPasswordResponse'
+            $ref: '#/definitions/models.SuccessResponse'
         "400":
           description: Некорректный JSON
           schema:
@@ -631,6 +1007,41 @@ paths:
       summary: Установка нового пароля
       tags:
       - auth
+  /completed_events/{user_id}:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список событий, которые пользователь отметил как выполненные.
+      parameters:
+      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список выполненных пользователем событий
+          schema:
+            items:
+              $ref: '#/definitions/models.UserCompletedEvent'
+            type: array
+        "400":
+          description: Некорректный user_id
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Нет доступа
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка сервера при получении выполненных событий
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Получить выполненные события
+      tags:
+      - user
   /profile:
     get:
       description: Возвращает данные о пользователе

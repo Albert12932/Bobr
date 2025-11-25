@@ -11,34 +11,35 @@ import (
 	"time"
 )
 
-// DeleteUser Удаление пользователя
-// @Summary      Удаление пользователя
-// @Description  Удаляет пользователя по адресу почты.
+// DeleteUser  Удаление пользователя по email
+// @Summary      Удалить пользователя
+// @Description  Удаляет пользователя по его email. Требует прав администратора.
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Security     BearerAuth
-// @Param        Authorization  header  string  true  "Bearer токен" default(Bearer )
-// @Param        input  body  models.DeleteUserRequest  true  "Почта"
-// @Success      200  {object}  models.DeleteUserResponse  "Пользователь успешно удалён"
-// @Failure      400  {object}  models.ErrorResponse        "Некорректный JSON"
-// @Failure      404  {object}  models.ErrorResponse        "Пользователь не найден"
-// @Failure      500  {object}  models.ErrorResponse        "Ошибка при удалении пользователя"
-// @Router       /admin/delete_user [delete]
+// @Param        Authorization  header  string  true   "Bearer токен авторизации. Формат: Bearer {token}"
+// @Param        email          path    string  true   "Email удаляемого пользователя"
+// @Success      200  {object}  models.DeleteUserResponse    "Пользователь успешно удалён"
+// @Failure      400  {object}  models.ErrorResponse "Передан пустой email"
+// @Failure      401  {object}  models.ErrorResponse "Нет прав доступа к операции"
+// @Failure      404  {object}  models.ErrorResponse "Пользователь с таким email не найден"
+// @Failure      500  {object}  models.ErrorResponse "Ошибка сервера при удалении"
+// @Router       /admin/delete_user/{email} [delete]
 func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var userData models.DeleteUserRequest
-		if err := c.ShouldBindJSON(&userData); err != nil {
+		userEmail := c.Param("email")
+
+		if userEmail == "" {
 			c.JSON(400, models.ErrorResponse{
-				Error:   err.Error(),
-				Message: "Error while marshaling JSON",
+				Error:   "empty email",
+				Message: "Передан пустой email",
 			})
 			return
 		}
 
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
-		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE email = $1", userData.Email)
+		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE email = $1", userEmail)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
 				Error:   err.Error(),
@@ -54,8 +55,8 @@ func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 		c.JSON(200, models.DeleteUserResponse{
-			Deleted: true,
-			Email:   userData.Email,
+			Successful: true,
+			Email:      userEmail,
 		})
 		return
 	}
@@ -142,24 +143,24 @@ func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
 
 }
 
-// PatchUser обновляет данные пользователя
+// UpdateUser обновляет данные пользователя
 // @Summary Обновление данных пользователя
 // @Description Обновляет данные пользователя с проверкой прав доступа. Только пользователи с более высоким уровнем прав могут изменять данные пользователей с более низким уровнем прав.
 // @Tags admin
 // @Accept json
 // @Produce json
 // @Param Authorization header string true "Bearer токен в формате: Bearer {token} default(Bearer )"
-// @Param request body models.PatchUserRequest true "Данные для обновления пользователя"
-// @Success 200 {object} models.PatchUserResponse "Успешное обновление данных пользователя"
+// @Param request body models.UpdateUserRequest true "Данные для обновления пользователя"
+// @Success 200 {object} models.UpdateUserResponse "Успешное обновление данных пользователя"
 // @Failure 400 {object} models.ErrorResponse "Ошибка в формате JSON"
 // @Failure 403 {object} models.ErrorResponse "Недостаточно прав"
 // @Failure 500 {object} models.ErrorResponse "Внутренняя ошибка сервера"
 // @Router /admin/update_user [patch]
-func PatchUser(pool *pgxpool.Pool) gin.HandlerFunc {
+func UpdateUser(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		var patchData models.PatchUserRequest
-		if err := c.ShouldBindJSON(&patchData); err != nil {
+		// TODO "can't scan into dest[1]: cannot scan NULL into *int64", обновление админа
+		var updateData models.UpdateUserRequest
+		if err := c.ShouldBindJSON(&updateData); err != nil {
 			c.JSON(400, models.ErrorResponse{
 				Error:   err.Error(),
 				Message: "Error while marshaling JSON",
@@ -184,9 +185,9 @@ func PatchUser(pool *pgxpool.Pool) gin.HandlerFunc {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		if patchData.NewData.RoleLevel != 0 {
+		if updateData.NewData.RoleLevel != 0 {
 			var exists bool
-			err := pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM roles WHERE level = $1)", patchData.NewData.RoleLevel).Scan(&exists)
+			err := pool.QueryRow(ctx, "SELECT EXISTS(SELECT 1 FROM roles WHERE level = $1)", updateData.NewData.RoleLevel).Scan(&exists)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 					Error:   err.Error(),
@@ -198,7 +199,7 @@ func PatchUser(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		var curRoleLevel, curBookId int64
 
-		err := pool.QueryRow(ctx, "SELECT role_level, book_id FROM users WHERE id = $1", patchData.UserId).Scan(&curRoleLevel, &curBookId)
+		err := pool.QueryRow(ctx, "SELECT role_level, book_id FROM users WHERE id = $1", updateData.UserId).Scan(&curRoleLevel, &curBookId)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 				Error:   err.Error(),
@@ -207,7 +208,7 @@ func PatchUser(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		if patchData.NewData.RoleLevel >= adminRoleLevel || curRoleLevel >= adminRoleLevel {
+		if updateData.NewData.RoleLevel >= adminRoleLevel || curRoleLevel >= adminRoleLevel {
 			c.JSON(http.StatusForbidden, models.ErrorResponse{
 				Error:   "Forbidden",
 				Message: "Не достаточно прав",
@@ -217,29 +218,29 @@ func PatchUser(pool *pgxpool.Pool) gin.HandlerFunc {
 
 		builder := sq.Update("users")
 
-		if patchData.NewData.BookId != 0 {
-			builder = builder.Set("book_id", patchData.NewData.BookId)
+		if updateData.NewData.BookId != 0 {
+			builder = builder.Set("book_id", updateData.NewData.BookId)
 		}
-		if patchData.NewData.Name != "" {
-			builder = builder.Set("name", patchData.NewData.Name)
+		if updateData.NewData.Name != "" {
+			builder = builder.Set("name", updateData.NewData.Name)
 		}
-		if patchData.NewData.Surname != "" {
-			builder = builder.Set("surname", patchData.NewData.Surname)
+		if updateData.NewData.Surname != "" {
+			builder = builder.Set("surname", updateData.NewData.Surname)
 		}
-		if patchData.NewData.MiddleName != "" {
-			builder = builder.Set("middle_name", patchData.NewData.MiddleName)
+		if updateData.NewData.MiddleName != "" {
+			builder = builder.Set("middle_name", updateData.NewData.MiddleName)
 		}
-		if patchData.NewData.StudentGroup != "" {
-			builder = builder.Set("student_group", patchData.NewData.StudentGroup)
+		if updateData.NewData.StudentGroup != "" {
+			builder = builder.Set("student_group", updateData.NewData.StudentGroup)
 		}
-		if patchData.NewData.Email != "" {
-			builder = builder.Set("email", patchData.NewData.Email)
+		if updateData.NewData.Email != "" {
+			builder = builder.Set("email", updateData.NewData.Email)
 		}
-		if patchData.NewData.RoleLevel != 0 {
-			builder = builder.Set("role_level", patchData.NewData.RoleLevel)
+		if updateData.NewData.RoleLevel != 0 {
+			builder = builder.Set("role_level", updateData.NewData.RoleLevel)
 		}
 
-		builder = builder.Where(sq.Eq{"id": patchData.UserId})
+		builder = builder.Where(sq.Eq{"id": updateData.UserId})
 
 		sqlQuery, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 		if err != nil {
@@ -266,21 +267,53 @@ func PatchUser(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		var resp models.PatchUserResponse
+		var resp models.UpdateUserResponse
 
-		resp.UserID = patchData.UserId
+		resp.UserID = updateData.UserId
 		resp.Successful = true
-		resp.New.BookId = patchData.NewData.BookId
-		resp.New.Name = patchData.NewData.Name
-		resp.New.Surname = patchData.NewData.Surname
-		resp.New.MiddleName = patchData.NewData.MiddleName
-		resp.New.StudentGroup = patchData.NewData.StudentGroup
-		resp.New.Email = patchData.NewData.Email
-		resp.New.RoleLevel = patchData.NewData.RoleLevel
+		resp.New.BookId = updateData.NewData.BookId
+		resp.New.Name = updateData.NewData.Name
+		resp.New.Surname = updateData.NewData.Surname
+		resp.New.MiddleName = updateData.NewData.MiddleName
+		resp.New.StudentGroup = updateData.NewData.StudentGroup
+		resp.New.Email = updateData.NewData.Email
+		resp.New.RoleLevel = updateData.NewData.RoleLevel
 
 		c.JSON(200, resp)
 
 		return
 
+	}
+}
+
+// GetEvents  Получение списка событий
+// @Summary      Получить все события
+// @Description  Возвращает полный список событий из базы данных.
+// @Tags         admin
+// @Accept       json
+// @Produce      json
+// @Param        Authorization  header  string  true  "Bearer токен авторизации. Формат: Bearer {token}"
+// @Success      200  {array}   models.Event         "Список событий"
+// @Failure      500  {object}  models.ErrorResponse "Ошибка сервера при получении списка событий"
+// @Router       /admin/events [get]
+func GetEvents(pool *pgxpool.Pool) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var events []models.Event
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+		defer cancel()
+
+		err := pgxscan.Select(ctx, pool, &events, "select id, title, description, event_type_code, points, icon_url, event_date, created_at from events")
+		if err != nil {
+			c.JSON(500, models.ErrorResponse{
+				Error:   err.Error(),
+				Message: "Ошибка при получении событий",
+			})
+			return
+		}
+
+		c.JSON(200, events)
+		return
 	}
 }

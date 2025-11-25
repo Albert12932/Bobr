@@ -4,14 +4,9 @@
         "contact": {}
     },
     "paths": {
-        "/admin/delete_user": {
-            "delete": {
-                "security": [
-                    {
-                        "BearerAuth": []
-                    }
-                ],
-                "description": "Удаляет пользователя по адресу почты.",
+        "/admin/add_completed_event": {
+            "post": {
+                "description": "Добавляет запись о выполнении события конкретным пользователем. Требует прав администратора.",
                 "consumes": [
                     "application/json"
                 ],
@@ -21,24 +16,325 @@
                 "tags": [
                     "admin"
                 ],
-                "summary": "Удаление пользователя",
+                "summary": "Отметить выполнение события",
                 "parameters": [
                     {
                         "type": "string",
-                        "default": "Bearer",
-                        "description": "Bearer токен",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
                     },
                     {
-                        "description": "Почта",
+                        "description": "ID пользователя и ID события",
                         "name": "input",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.DeleteUserRequest"
+                            "$ref": "#/definitions/models.CompleteUserEventRequest"
                         }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Событие отмечено как выполненное",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректные данные или пользователь/событие не существуют",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Событие уже было отмечено ранее",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при добавлении записи",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/completed_events": {
+            "get": {
+                "description": "Возвращает полный список выполненных событий всех пользователей системы.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получить все выполненные события",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список выполненных событий всех пользователей",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.CompletedEvent"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при получении выполненных событий",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/create_event": {
+            "post": {
+                "description": "Создаёт новое событие в системе и возвращает полную информацию о созданной записи. Требует авторизации администратора. Поля помимо title могут не указываться, тогда они будут заменены на стандартные значения",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Создать событие",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные нового события",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateEventRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Событие успешно создано",
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateEventResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный JSON или ошибка валидации",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Нет доступа — невалидный или отсутствующий токен",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при создании события",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/delete_completed_event/{user_id}/{event_id}": {
+            "delete": {
+                "description": "Удаляет отметку о выполнении события конкретным пользователем. Требует прав администратора.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Удаление выполнения события",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID пользователя",
+                        "name": "user_id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID события",
+                        "name": "event_id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Отметка о выполнении успешно удалена",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteCompletedEventResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный user_id или event_id",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Отметка о выполнении не найдена",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при удалении",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/delete_event/{id}": {
+            "delete": {
+                "description": "Удаляет событие по его идентификатору. Требует прав администратора.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Удалить событие",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "ID события для удаления",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Событие успешно удалено",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteEventResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный ID события",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Нет прав доступа",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Событие с указанным ID не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при удалении",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/delete_user/{email}": {
+            "delete": {
+                "description": "Удаляет пользователя по его email. Требует прав администратора.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Удалить пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Email удаляемого пользователя",
+                        "name": "email",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -49,19 +345,66 @@
                         }
                     },
                     "400": {
-                        "description": "Некорректный JSON",
+                        "description": "Передан пустой email",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Нет прав доступа к операции",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Пользователь не найден",
+                        "description": "Пользователь с таким email не найден",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Ошибка при удалении пользователя",
+                        "description": "Ошибка сервера при удалении",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/events": {
+            "get": {
+                "description": "Возвращает полный список событий из базы данных.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Получить все события",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список событий",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Event"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при получении списка событий",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -113,6 +456,65 @@
                 }
             }
         },
+        "/admin/update_event": {
+            "patch": {
+                "description": "Производит частичное обновление данных события по его ID.\nОбновляются только те поля, которые переданы в теле запроса.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Обновить выбранные поля события",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "ID события и новые значения полей",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.UpdateEventRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Событие успешно обновлено",
+                        "schema": {
+                            "$ref": "#/definitions/models.SuccessResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный JSON или ошибка валидации",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Неавторизованный доступ — неверный или отсутствующий токен",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при попытке обновления записи",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/update_user": {
             "patch": {
                 "description": "Обновляет данные пользователя с проверкой прав доступа. Только пользователи с более высоким уровнем прав могут изменять данные пользователей с более низким уровнем прав.",
@@ -141,7 +543,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/models.PatchUserRequest"
+                            "$ref": "#/definitions/models.UpdateUserRequest"
                         }
                     }
                 ],
@@ -149,7 +551,7 @@
                     "200": {
                         "description": "Успешное обновление данных пользователя",
                         "schema": {
-                            "$ref": "#/definitions/models.PatchUserResponse"
+                            "$ref": "#/definitions/models.UpdateUserResponse"
                         }
                     },
                     "400": {
@@ -477,7 +879,10 @@
                     "200": {
                         "description": "Инструкция отправлена на почту",
                         "schema": {
-                            "$ref": "#/definitions/models.ResetPasswordResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
@@ -523,7 +928,7 @@
                     "200": {
                         "description": "Пароль успешно обновлён",
                         "schema": {
-                            "$ref": "#/definitions/models.SetNewPasswordResponse"
+                            "$ref": "#/definitions/models.SuccessResponse"
                         }
                     },
                     "400": {
@@ -540,6 +945,59 @@
                     },
                     "500": {
                         "description": "Ошибка при обновлении пароля",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/completed_events/{user_id}": {
+            "get": {
+                "description": "Возвращает список событий, которые пользователь отметил как выполненные.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Получить выполненные события",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список выполненных пользователем событий",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.UserCompletedEvent"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный user_id",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Нет доступа",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при получении выполненных событий",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -632,22 +1090,119 @@
                 }
             }
         },
-        "models.DeleteUserRequest": {
+        "models.CompleteUserEventRequest": {
             "type": "object",
             "properties": {
-                "email": {
+                "event_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.CompletedEvent": {
+            "type": "object",
+            "properties": {
+                "completed_at": {
                     "type": "string"
+                },
+                "event_id": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.CreateEventRequest": {
+            "type": "object",
+            "required": [
+                "title"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "event_type_code": {
+                    "type": "integer"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.CreateEventResponse": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "integer"
+                },
+                "event_type_code": {
+                    "type": "integer"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.DeleteCompletedEventResponse": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "integer"
+                },
+                "successful": {
+                    "type": "boolean"
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.DeleteEventResponse": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "integer"
+                },
+                "successful": {
+                    "type": "boolean"
                 }
             }
         },
         "models.DeleteUserResponse": {
             "type": "object",
             "properties": {
-                "deleted": {
-                    "type": "boolean"
-                },
                 "email": {
                     "type": "string"
+                },
+                "successful": {
+                    "type": "boolean"
                 }
             }
         },
@@ -658,6 +1213,35 @@
                     "type": "string"
                 },
                 "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.Event": {
+            "type": "object",
+            "properties": {
+                "created": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "integer"
+                },
+                "event_type_code": {
+                    "type": "integer"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "title": {
                     "type": "string"
                 }
             }
@@ -685,87 +1269,6 @@
                 },
                 "user": {
                     "$ref": "#/definitions/models.UserSubstructure"
-                }
-            }
-        },
-        "models.PatchUserRequest": {
-            "type": "object",
-            "properties": {
-                "new_data": {
-                    "type": "object",
-                    "properties": {
-                        "book_id": {
-                            "type": "integer"
-                        },
-                        "email": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "middle_name": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "name": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "role_level": {
-                            "type": "integer"
-                        },
-                        "student_group": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "surname": {
-                            "type": "string",
-                            "example": ""
-                        }
-                    }
-                },
-                "user_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "models.PatchUserResponse": {
-            "type": "object",
-            "properties": {
-                "new": {
-                    "type": "object",
-                    "properties": {
-                        "book_id": {
-                            "type": "integer"
-                        },
-                        "email": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "middle_name": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "name": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "role_level": {
-                            "type": "integer"
-                        },
-                        "student_group": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "surname": {
-                            "type": "string",
-                            "example": ""
-                        }
-                    }
-                },
-                "successful": {
-                    "type": "boolean"
-                },
-                "user_id": {
-                    "type": "integer"
                 }
             }
         },
@@ -858,21 +1361,6 @@
                 }
             }
         },
-        "models.ResetPasswordResponse": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "message": {
-                    "type": "string",
-                    "default": "If the email is registered, a password reset link has been sent."
-                },
-                "ok": {
-                    "type": "boolean"
-                }
-            }
-        },
         "models.SetNewPasswordRequest": {
             "type": "object",
             "required": [
@@ -885,17 +1373,6 @@
                 },
                 "token": {
                     "type": "string"
-                }
-            }
-        },
-        "models.SetNewPasswordResponse": {
-            "type": "object",
-            "properties": {
-                "message": {
-                    "type": "string"
-                },
-                "ok": {
-                    "type": "boolean"
                 }
             }
         },
@@ -922,6 +1399,129 @@
                 },
                 "surname": {
                     "type": "string"
+                }
+            }
+        },
+        "models.SuccessResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "successful": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "models.UpdateEventRequest": {
+            "type": "object",
+            "properties": {
+                "event_id": {
+                    "type": "integer"
+                },
+                "new_data": {
+                    "type": "object",
+                    "properties": {
+                        "description": {
+                            "type": "string"
+                        },
+                        "event_date": {
+                            "type": "string"
+                        },
+                        "event_type_code": {
+                            "type": "integer"
+                        },
+                        "icon_url": {
+                            "type": "string"
+                        },
+                        "points": {
+                            "type": "integer"
+                        },
+                        "title": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "models.UpdateUserRequest": {
+            "type": "object",
+            "properties": {
+                "new_data": {
+                    "type": "object",
+                    "properties": {
+                        "book_id": {
+                            "type": "integer"
+                        },
+                        "email": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "middle_name": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "name": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "role_level": {
+                            "type": "integer"
+                        },
+                        "student_group": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "surname": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    }
+                },
+                "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.UpdateUserResponse": {
+            "type": "object",
+            "properties": {
+                "new": {
+                    "type": "object",
+                    "properties": {
+                        "book_id": {
+                            "type": "integer"
+                        },
+                        "email": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "middle_name": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "name": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "role_level": {
+                            "type": "integer"
+                        },
+                        "student_group": {
+                            "type": "string",
+                            "example": ""
+                        },
+                        "surname": {
+                            "type": "string",
+                            "example": ""
+                        }
+                    }
+                },
+                "successful": {
+                    "type": "boolean"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },
@@ -960,6 +1560,17 @@
                 },
                 "surname": {
                     "type": "string"
+                }
+            }
+        },
+        "models.UserCompletedEvent": {
+            "type": "object",
+            "properties": {
+                "completed_at": {
+                    "type": "string"
+                },
+                "event_id": {
+                    "type": "integer"
                 }
             }
         },

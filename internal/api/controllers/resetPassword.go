@@ -23,7 +23,7 @@ import (
 // @Accept       json
 // @Produce      json
 // @Param        input  body  models.ResetPasswordRequest  true  "Почта пользователя"
-// @Success      200  {object}  models.ResetPasswordResponse  "Инструкция отправлена на почту"
+// @Success      200  {object}  map[string]string  "Инструкция отправлена на почту"
 // @Failure      400  {object}  models.ErrorResponse  "Некорректный JSON"
 // @Failure      500  {object}  models.ErrorResponse  "Ошибка при поиске пользователя или отправке письма"
 // @Router       /auth/reset_password [post]
@@ -125,10 +125,10 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 		log.Println("Письмо отправлено успешно")
 
-		c.JSON(200, models.ResetPasswordResponse{
-			OK:      true,
-			Email:   body.Email,
-			Message: "Инструкция по сбросу пароля отправлена на указанную почту",
+		c.JSON(200, gin.H{
+			"OK":      true,
+			"Email":   body.Email,
+			"Message": "Инструкция по сбросу пароля отправлена на указанную почту",
 		})
 		return
 	}
@@ -141,7 +141,7 @@ func ResetPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 // @Accept       json
 // @Produce      json
 // @Param        input  body  models.SetNewPasswordRequest  true  "Токен и новый пароль"
-// @Success      200  {object}  models.SetNewPasswordResponse  "Пароль успешно обновлён"
+// @Success      200  {object}  models.SuccessResponse  "Пароль успешно обновлён"
 // @Failure      400  {object}  models.ErrorResponse  "Некорректный JSON"
 // @Failure      401  {object}  models.ErrorResponse  "Невалидный или истекший токен"
 // @Failure      500  {object}  models.ErrorResponse  "Ошибка при обновлении пароля"
@@ -213,9 +213,9 @@ func SetNewPassword(pool *pgxpool.Pool) gin.HandlerFunc {
 		}
 
 		// Возвращаем успешный ответ
-		c.JSON(200, models.SetNewPasswordResponse{
-			OK:      true,
-			Message: "Пароль успешно обновлен",
+		c.JSON(200, models.SuccessResponse{
+			Successful: true,
+			Message:    "Пароль успешно обновлен",
 		})
 		return
 	}

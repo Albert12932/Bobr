@@ -49,54 +49,60 @@ CREATE TABLE IF NOT EXISTS reset_password_tokens (
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     PRIMARY KEY (user_id)
 );
+CREATE TABLE IF NOT EXISTS institutes (
+                                          id serial primary key,
+                                          name text unique not null
+);
+CREATE TABLE IF NOT EXISTS studies (
+                                       id serial primary key,
+                                       name text unique not null,
+                                       institute_id int references institutes(id) ON DELETE CASCADE,
+                                       FOREIGN KEY (institute_id) REFERENCES institutes(id) ON DELETE CASCADE
+);
+CREATE TABLE IF NOT EXISTS student_groups (
+    id serial primary key,
+    name text unique not null,
+    studies_id int references studies(id) on DELETE CASCADE,
+    FOREIGN KEY (studies_id) references studies(id) ON DELETE CASCADE
+
+);
+
+CREATE TABLE IF NOT EXISTS events_types (
+    id serial primary key,
+    code int unique not null,
+    name text not null
+);
 
 
--- Базовый набор
--- Так же примерный набор прав
--- Уровни с шагом в 10 если вдруг понадобятся промежуточные по правам
+CREATE TABLE IF NOT EXISTS events (
+                                      id serial primary key,
+                                      event_type_code int default 0 references events_types(code) on DELETE SET DEFAULT,
+                                      title text unique not null,
+                                      description text default 'Empty description',
+                                      points int default 100,
+                                      icon_url text default 'https://09edcbd14ce2e9c5981946024728da15.bckt.ru/testIcons/star.webp',
+                                      event_date timestamptz default '1970-01-01T00:00:00Z',
+                                      created_at timestamptz default now()
+);
+CREATE TABLE IF NOT EXISTS completed_events (
+    user_id int references users(id) on DELETE CASCADE,
+    event_id int references events(id) on DELETE CASCADE,
+    completed_at timestamptz default now(),
+    PRIMARY KEY (user_id, event_id)
+);
+
 INSERT INTO roles (code, name, level) VALUES
-                                          -- Просто любой студент
                                           ('student', 'Студент', 10),
-                                          -- Имеет стандартные права для игры
-                                          -- Не может никак влиять на других пользователей
-                                          -- Не может ничего создавать
-
-
-
-                                          -- Либо очень доверенный студент, либо, например, преподаватели
-                                          -- или вообще люди со стороны, но учавствующие в научной жизни вуза
-                                          -- ('supervisor', 'Научный руководитель', 30),
-                                          -- Может создавать события/виклики без модерации
-                                          -- Может валидировать результаты(начисление балов/опыта) за ИРЛ события
-
-                                          -- Сотрудники деканата
-                                          -- ('moderator', 'Модератор', 40),
-                                          -- Не может напрямую учавствовать в игре, нет игрового персонажа
-                                          -- Может создавать ссылки на регистрацию(не выше supervisor роли)
-                                          -- Может управлять ролям юзеров ниже и банить их
-                                          -- Область видимоси админ прав - направление, реже - институт
-
-                                          -- Зав. кафедры/РОП
                                           ('admin', 'Администратор', 50),
-                                          -- Может создавать ссылки для модераторов и ниже
-                                          -- Может управлять ролями и банить модераторов и ниже
-                                          -- Может управлять группами внутри своего направления, реже - института
-                                          -- Область видимости прав - своё направление, реже - институт
-
-                                          -- Декан/Ректора
-                                          -- (условно, вероятно будут замы по научной деятельности или подобное)
-                                          -- ('super_admin', 'Супер-администратор', 60),
-                                          -- Управление в своей области видимости институтами/направлениями/группами
-                                          -- Создание ссылко на все уровни ниже супр-админа
-                                          -- Управление ролями и бан пользователей ниже супе-админа
-                                          -- Область видимости - институт(для деканов), весь вуз - для ректора
-
-
-                                          -- Удобная роль для тестирования и полного управления со стороны разработчиков
                                           ('developer', 'Разработчик', 100);
--- Все возможные права что есть выше, как захочется
--- Задаётся ТОЛЬКО через ручное редактировние БД
--- Единственная роль, способная создать ссылку для супер-админа
+
+INSERT into events_types (code, name) VALUES
+                                          (1, 'Хакатон'),
+                                          (2, 'Статья'),
+                                          (3, 'Олимпиада'),
+                                          (4, 'Проект'),
+                                          (0, 'Неизвестно');
 
 CREATE UNIQUE INDEX IF NOT EXISTS link_tokens_token_hash_uq
     ON link_tokens (token_hash);
+
