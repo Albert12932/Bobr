@@ -15,11 +15,6 @@ type ErrorResponse struct {
 	Message string
 }
 
-type DeleteUserResponse struct {
-	Deleted bool   `json:"deleted"`
-	Email   string `json:"email"`
-}
-
 type Student struct {
 	Id         int64     `json:"id"`
 	BookId     int64     `json:"book_id"`
@@ -90,6 +85,26 @@ type LoginResponse struct {
 	Auth             `json:"auth"`
 }
 
+type DeleteUserResponse struct {
+	Successful bool   `json:"successful"`
+	Email      string `json:"email"`
+}
+type SuccessResponse struct {
+	Successful bool   `json:"successful"`
+	Message    string `json:"message"`
+}
+
+type DeleteEventResponse struct {
+	Successful bool `json:"successful"`
+	EventID    int  `json:"event_id"`
+}
+
+type DeleteCompletedEventResponse struct {
+	Successful bool `json:"successful"`
+	UserID     int  `json:"user_id"`
+	EventID    int  `json:"event_id"`
+}
+
 type RefreshTokenResponse struct {
 	UserID int64 `json:"user_id"`
 	Auth   `json:"auth"`
@@ -99,20 +114,9 @@ type ResetPasswordRequest struct {
 	Email string `json:"email" binding:"required"`
 }
 
-type ResetPasswordResponse struct {
-	OK      bool   `json:"ok"`
-	Email   string `json:"email"`
-	Message string `json:"message" default:"If the email is registered, a password reset link has been sent."`
-}
-
 type SetNewPasswordRequest struct {
 	Token       string `json:"token" binding:"required"`
 	NewPassword string `json:"new_password" binding:"required"`
-}
-
-type SetNewPasswordResponse struct {
-	OK      bool   `json:"ok"`
-	Message string `json:"message"`
 }
 
 type Payload struct {
@@ -120,16 +124,6 @@ type Payload struct {
 	RoleLevel int64 `json:"role_level"`
 	Exp       int64 `json:"exp"`
 	Iat       int64 `json:"iat"`
-}
-
-type SetRoleRequest struct {
-	UserId    int64 `json:"user_id"`
-	RoleLevel int64 `json:"role_level"`
-}
-type SetRoleResponse struct {
-	Successful bool  `json:"successful"`
-	UserID     int64 `json:"user_id"`
-	RoleLevel  int64 `json:"role_level"`
 }
 
 type GetTokensRequest struct {
@@ -148,7 +142,7 @@ type ProfileResponse struct {
 	RoleLevel    int64
 }
 
-type PatchUserRequest struct {
+type UpdateUserRequest struct {
 	UserId  int64 `json:"user_id"`
 	NewData struct {
 		BookId       int64  `json:"book_id,omitempty" `
@@ -161,7 +155,7 @@ type PatchUserRequest struct {
 	} `json:"new_data"`
 }
 
-type PatchUserResponse struct {
+type UpdateUserResponse struct {
 	Successful bool  `json:"successful"`
 	UserID     int64 `json:"user_id"`
 	New        struct {
@@ -173,4 +167,63 @@ type PatchUserResponse struct {
 		Email        string `json:"email,omitempty" example:""`
 		RoleLevel    int64  `json:"role_level,omitempty"`
 	}
+}
+
+type CreateEventRequest struct {
+	Title         string     `json:"title" binding:"required"`
+	Description   string     `json:"description"`
+	EventTypeCode int        `json:"event_type_code"`
+	Points        int        `json:"points"`
+	IconUrl       string     `json:"icon_url"`
+	EventDate     *time.Time `json:"event_date"`
+}
+
+type CreateEventResponse struct {
+	EventID       int64     `json:"event_id" db:"id"`
+	Title         string    `json:"title"`
+	Description   string    `json:"description"`
+	EventTypeCode int       `json:"event_type_code"`
+	Points        int       `json:"points"`
+	IconUrl       string    `json:"icon_url"`
+	EventDate     time.Time `json:"event_date"`
+	CreatedAt     time.Time `json:"created"`
+}
+
+type UpdateEventRequest struct {
+	EventId int64 `json:"event_id"`
+	NewData struct {
+		Title         string     `json:"title,omitempty"`
+		Description   string     `json:"description,omitempty"`
+		EventTypeCode int        `json:"event_type_code,omitempty"`
+		Points        int        `json:"points,omitempty"`
+		IconUrl       string     `json:"icon_url,omitempty"`
+		EventDate     *time.Time `json:"event_date,omitempty"`
+	} `json:"new_data"`
+}
+
+type Event struct {
+	EventID       int64     `json:"event_id" db:"id"`
+	Title         string    `json:"title"`
+	Description   string    `json:"description"`
+	EventTypeCode int       `json:"event_type_code"`
+	Points        int       `json:"points"`
+	IconUrl       string    `json:"icon_url"`
+	EventDate     time.Time `json:"event_date"`
+	CreatedAt     time.Time `json:"created"`
+}
+
+type CompleteUserEventRequest struct {
+	UserId  int64 `json:"user_id"`
+	EventId int64 `json:"event_id"`
+}
+
+type UserCompletedEvent struct {
+	EventID   int64     `json:"event_id" db:"event_id"`
+	Completed time.Time `json:"completed_at" db:"completed_at"`
+}
+
+type CompletedEvent struct {
+	UserId      int64     `json:"user_id"`
+	EventId     int64     `json:"event_id"`
+	CompletedAt time.Time `json:"completed_at"`
 }

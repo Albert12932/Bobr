@@ -10,3 +10,20 @@ beavers.althgamer.ru {
         Access-Control-Allow-Headers "Content-Type, Authorization"
     }
 }
+
+admin.beavers.althgamer.ru {
+    encode gzip
+
+    handle {
+        root * /srv/beavers_admin
+
+        header {
+            Cross-Origin-Opener-Policy "same-origin"
+            Cross-Origin-Embedder-Policy "require-corp"
+            X-Content-Type-Options "nosniff"
+        }
+
+        try_files {path} /index.html
+        file_server
+    }
+}
