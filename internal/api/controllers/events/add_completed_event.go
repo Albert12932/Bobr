@@ -1,12 +1,11 @@
 package events
 
 import (
+	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
 	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 )
 
@@ -24,66 +23,52 @@ import (
 // @Failure      409  {object}  models.ErrorResponse                     "Событие уже было отмечено ранее"
 // @Failure      500  {object}  models.ErrorResponse                     "Ошибка сервера при добавлении записи"
 // @Router       /admin/add_completed_event [post]
-func AddCompletedEvent(pool *pgxpool.Pool) gin.HandlerFunc {
+func AddCompletedEvent(service *services.CompletedEventsService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Берем модель из тела запроса
-		var completeData models.CompleteUserEventRequest
 
-		if err := c.ShouldBindJSON(&completeData); err != nil {
+		var body models.CompleteUserEventRequest
+		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(400, models.ErrorResponse{
 				Error:   err.Error(),
-				Message: "Error while marshaling JSON",
+				Message: "Некорректный JSON",
 			})
 			return
 		}
 
-		// Создаем контекст с таймаутом
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
 
-		// Выполняем вставку записи о выполнении события
-		_, err := pool.Exec(ctx,
-			`INSERT INTO completed_events (user_id, event_id)
-			 VALUES ($1, $2)`, completeData.UserId, completeData.EventId)
+		err := service.AddCompletedEvent(ctx, body.UserId, body.EventId)
+		if err != nil {
 
-		var pgErr *pgconn.PgError
-		// Обработка ошибок Postgres
-		{
-			if errors.As(err, &pgErr) {
+			switch {
+			// TODO SQLSTATE 23505
+			case errors.Is(err, services.ErrInvalidReference):
+				c.JSON(400, models.ErrorResponse{
+					Error:   err.Error(),
+					Message: "Пользователь или событие не существуют",
+				})
+				return
 
-				// Ошибка внешнего ключа
-				if pgErr.Code == "23503" {
-					c.JSON(400, models.ErrorResponse{
-						Error:   "invalid_reference",
-						Message: "Пользователь или событие не существует",
-					})
-					return
-				}
+			case errors.Is(err, services.ErrAlreadyCompleted):
+				c.JSON(409, models.ErrorResponse{
+					Error:   err.Error(),
+					Message: "Это событие уже отмечено пользователем",
+				})
+				return
 
-				// Дубликат (PK violation, unique violation)
-				if pgErr.Code == "23505" {
-					c.JSON(409, models.ErrorResponse{
-						Error:   "already_completed",
-						Message: "Это событие уже отмечено пользователем",
-					})
-					return
-				}
-
-				// Любая другая ошибка Postgres
+			default:
 				c.JSON(500, models.ErrorResponse{
-					Error:   pgErr.Message,
+					Error:   err.Error(),
 					Message: "Ошибка базы данных",
 				})
 				return
 			}
 		}
 
-		// Возвращаем успешный ответ
 		c.JSON(200, models.SuccessResponse{
 			Successful: true,
 			Message:    "Событие успешно отмечено как выполненное",
 		})
-
-		return
 	}
 }

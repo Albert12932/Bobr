@@ -1,12 +1,10 @@
 package users
 
 import (
+	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
-	"fmt"
-	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"time"
 )
@@ -21,40 +19,31 @@ import (
 // @Success      200  {object} models.ProfileResponse               "Данные о пользователе"
 // @Failure      500  {object} models.ErrorResponse       "Ошибка при запросе или чтении данных"
 // @Router       /me/profile [get]
-func GetProfile(pool *pgxpool.Pool) gin.HandlerFunc {
+func GetProfile(profileService *services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
-		payloadInterface, existsPayload := c.Get("userPayload")
-		if !existsPayload {
-			c.JSON(http.StatusInternalServerError,
-				models.ErrorResponse{
-					Error:   "Payload doesn't exist",
-					Message: "Данные о пользователе в JWT Токене (Payload) не найдены",
-				})
+		payloadInterface, ok := c.Get("userPayload")
+		if !ok {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "payload missing",
+				Message: "Не удалось получить данные пользователя из токена",
+			})
 			return
 		}
-
-		// Преобразуем payload в наш тип
 		payload := payloadInterface.(*models.Payload)
 
-		fmt.Println(payload.Sub)
-		fmt.Println("Тут id")
-
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
 
-		var profileData models.ProfileResponse
-
-		err := pgxscan.Get(ctx, pool, &profileData, `select coalesce(book_id, 0) as book_id, name, surname, middle_name, coalesce(birth_date, TO_DATE('01.01.1970', 'DD:MM:YYYY')) as birth_date, coalesce(student_group, '') as student_group, email, role_level from users where id = $1`, payload.Sub)
+		profile, err := profileService.GetProfile(ctx, payload.Sub) //TODO points sum
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 				Error:   err.Error(),
-				Message: "Ошибка при сканировании пользователей",
+				Message: "Ошибка при получении профиля пользователя",
 			})
+			return
 		}
 
-		c.JSON(200, profileData)
-		return
+		c.JSON(http.StatusOK, profile)
 	}
-
 }

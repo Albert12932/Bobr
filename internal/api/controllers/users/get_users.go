@@ -1,11 +1,10 @@
 package users
 
 import (
+	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
-	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 	"time"
 )
@@ -20,45 +19,31 @@ import (
 // @Success      200  {array}  models.User               "Список пользователей"
 // @Failure      500  {object} models.ErrorResponse       "Ошибка при запросе или чтении данных"
 // @Router       /admin/users [get]
-func GetUsers(pool *pgxpool.Pool) gin.HandlerFunc {
+func GetUsers(usersService *services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var users []models.User
 
-		var roleLevel int64
-		// Получаем уровень роли из payload
-		{
-			payloadInterface, existsPayload := c.Get("userPayload")
-			if !existsPayload {
-				c.JSON(http.StatusInternalServerError,
-					models.ErrorResponse{
-						Error:   "Payload doesn't exist",
-						Message: "Данные о пользователе в JWT Токене (Payload) не найдены",
-					})
-				return
-			}
-
-			// Преобразуем payload в наш тип
-			payload := payloadInterface.(*models.Payload)
-			roleLevel = payload.RoleLevel
+		payloadInterface, ok := c.Get("userPayload")
+		if !ok {
+			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
+				Error:   "payload missing",
+				Message: "Не удалось получить payload",
+			})
+			return
 		}
+		payload := payloadInterface.(*models.Payload)
 
-		// Создаем контекст с таймаутом
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
 
-		// Выполняем запрос к базе данных и сканируем результаты в слайс users
-		err := pgxscan.Select(ctx, pool, &users,
-			"SELECT id, COALESCE(book_id, 0) as book_id, surname, name, middle_name, coalesce(birth_date, '1970-01-01'::timestamp) as birth_date, coalesce(student_group, '') as student_group, password, email, role_level FROM users where role_level <= $1", roleLevel)
+		users, err := usersService.GetUsers(ctx, payload.RoleLevel)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, models.ErrorResponse{
 				Error:   err.Error(),
-				Message: "Ошибка при сканировании пользователей",
+				Message: "Ошибка при получении пользователей",
 			})
+			return
 		}
 
-		// Возвращаем список пользователей в формате JSON
-		c.JSON(200, users)
-		return
+		c.JSON(http.StatusOK, users)
 	}
-
 }

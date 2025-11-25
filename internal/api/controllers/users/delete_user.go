@@ -1,10 +1,11 @@
 package users
 
 import (
+	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
+	"errors"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 )
 
@@ -22,50 +23,42 @@ import (
 // @Failure      404  {object}  models.ErrorResponse "Пользователь с таким email не найден"
 // @Failure      500  {object}  models.ErrorResponse "Ошибка сервера при удалении"
 // @Router       /admin/delete_user/{email} [delete]
-func DeleteUser(pool *pgxpool.Pool) gin.HandlerFunc {
+func DeleteUser(userService *services.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var userEmail string
-		// Получаем email из параметров пути
-		{
-			userEmail = c.Param("email")
 
-			if userEmail == "" {
-				c.JSON(400, models.ErrorResponse{
-					Error:   "empty email",
-					Message: "Передан пустой email",
+		email := c.Param("email")
+		if email == "" {
+			c.JSON(400, models.ErrorResponse{
+				Error:   "empty email",
+				Message: "Передан пустой email",
+			})
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
+		defer cancel()
+
+		err := userService.DeleteUser(ctx, email)
+		if err != nil {
+			switch {
+			case errors.Is(err, services.ErrUserNotFound):
+				c.JSON(404, models.ErrorResponse{
+					Error:   "User not found",
+					Message: "Пользователь с такой почтой не найден",
+				})
+				return
+			default:
+				c.JSON(500, models.ErrorResponse{
+					Error:   err.Error(),
+					Message: "Ошибка при удалении пользователя",
 				})
 				return
 			}
 		}
 
-		// Создаем контекст с таймаутом
-		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
-		defer cancel()
-
-		// Удаляем пользователя из базы данных
-		tag, err := pool.Exec(ctx, "DELETE FROM users WHERE email = $1", userEmail)
-		if err != nil {
-			c.JSON(500, models.ErrorResponse{
-				Error:   err.Error(),
-				Message: "Error while deleting user",
-			})
-			return
-		}
-		// Проверяем, был ли удален пользователь
-		if tag.RowsAffected() == 0 {
-			c.JSON(404, models.ErrorResponse{
-				Error:   "User not found",
-				Message: "Не удалось найти пользователя с такой почтой",
-			})
-			return
-		}
-
-		// Возвращаем успешный ответ
 		c.JSON(200, models.DeleteUserResponse{
 			Successful: true,
-			Email:      userEmail,
+			Email:      email,
 		})
-		return
 	}
-
 }

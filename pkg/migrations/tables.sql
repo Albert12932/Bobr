@@ -90,6 +90,14 @@ CREATE TABLE IF NOT EXISTS completed_events (
     completed_at timestamptz default now(),
     PRIMARY KEY (user_id, event_id)
 );
+CREATE TABLE IF NOT EXISTS user_points (
+    user_id int primary key,
+    total_points int not null default 0,
+    CONSTRAINT fk_user_points_user
+        FOREIGN KEY (user_id)
+            REFERENCES users(id)
+            ON DELETE CASCADE
+);
 
 INSERT INTO roles (code, name, level) VALUES
                                           ('student', 'Студент', 10),

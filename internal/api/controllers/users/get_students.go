@@ -1,11 +1,10 @@
 package users
 
 import (
+	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
-	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 )
 
@@ -19,17 +18,12 @@ import (
 // @Success      200  {array}  models.Student             "Список студентов"
 // @Failure      500  {object} models.ErrorResponse        "Ошибка при запросе или чтении данных"
 // @Router       /admin/students [get]
-func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
+func GetStudents(service *services.StudentsService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var students []models.Student
-
-		// Создаем контекст с таймаутом
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
 
-		// Выполняем запрос к базе данных и сканируем результаты в слайс students
-		err := pgxscan.Select(ctx, pool, &students,
-			"select id, book_id, surname, name, middle_name, birth_date, student_group from students")
+		students, err := service.GetStudents(ctx)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
 				Error:   err.Error(),
@@ -38,8 +32,6 @@ func GetStudents(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		// Возвращаем список студентов в формате JSON
 		c.JSON(200, students)
-		return
 	}
 }

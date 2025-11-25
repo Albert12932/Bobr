@@ -1,11 +1,10 @@
 package events
 
 import (
+	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
-	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 )
 
@@ -19,16 +18,13 @@ import (
 // @Success      200  {array}   models.Event         "Список событий"
 // @Failure      500  {object}  models.ErrorResponse "Ошибка сервера при получении списка событий"
 // @Router       /admin/events [get]
-func GetEvents(pool *pgxpool.Pool) gin.HandlerFunc {
+func GetEvents(eventService *services.EventService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		var events []models.Event
 
-		// Создаем контекст с таймаутом
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
 
-		// Выполняем запрос к базе данных и сканируем результаты в слайс events
-		err := pgxscan.Select(ctx, pool, &events, "select id, title, description, event_type_code, points, icon_url, event_date, created_at from events")
+		events, err := eventService.GetEvents(ctx)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
 				Error:   err.Error(),
@@ -37,8 +33,6 @@ func GetEvents(pool *pgxpool.Pool) gin.HandlerFunc {
 			return
 		}
 
-		// Возвращаем список событий в формате JSON
 		c.JSON(200, events)
-		return
 	}
 }

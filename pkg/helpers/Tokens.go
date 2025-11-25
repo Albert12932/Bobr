@@ -4,9 +4,8 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"time"
-
 	"github.com/golang-jwt/jwt/v5"
+	"time"
 )
 
 const LinkTokenTTL = 5 * time.Minute
