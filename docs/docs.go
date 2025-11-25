@@ -963,7 +963,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/completed_events/{user_id}": {
+        "/me/completed_events": {
             "get": {
                 "description": "Возвращает список событий, которые пользователь отметил как выполненные.",
                 "consumes": [
@@ -1016,7 +1016,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/profile": {
+        "/me/profile": {
             "get": {
                 "security": [
                     {

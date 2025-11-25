@@ -1007,7 +1007,7 @@ paths:
       summary: Установка нового пароля
       tags:
       - auth
-  /completed_events/{user_id}:
+  /me/completed_events:
     get:
       consumes:
       - application/json
@@ -1042,7 +1042,7 @@ paths:
       summary: Получить выполненные события
       tags:
       - user
-  /profile:
+  /me/profile:
     get:
       description: Возвращает данные о пользователе
       parameters:

@@ -952,7 +952,7 @@
                 }
             }
         },
-        "/completed_events/{user_id}": {
+        "/me/completed_events": {
             "get": {
                 "description": "Возвращает список событий, которые пользователь отметил как выполненные.",
                 "consumes": [
@@ -1005,7 +1005,7 @@
                 }
             }
         },
-        "/profile": {
+        "/me/profile": {
             "get": {
                 "security": [
                     {
