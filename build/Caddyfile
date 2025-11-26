@@ -11,6 +11,7 @@ beavers.althgamer.ru {
     }
 }
 
+
 admin.beavers.althgamer.ru {
     encode gzip
 
@@ -26,12 +27,4 @@ admin.beavers.althgamer.ru {
         try_files {path} /index.html
         file_server
     }
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
 }
-=======
-}
->>>>>>> Stashed changes
-=======
-}
->>>>>>> Stashed changes
