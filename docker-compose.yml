@@ -33,6 +33,7 @@ services:
       - internal
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 #  caddy:
 #    image: caddy:2
 #    restart: unless-stopped
@@ -49,6 +50,8 @@ services:
 #    networks:
 #        - internal
 =======
+=======
+>>>>>>> Stashed changes
   caddy:
     image: caddy:2
     restart: unless-stopped
@@ -64,6 +67,9 @@ services:
       - app
     networks:
       - internal
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
 >>>>>>> Stashed changes
 
 volumes:
