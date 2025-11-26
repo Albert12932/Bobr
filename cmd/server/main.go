@@ -4,6 +4,7 @@ import (
 	_ "bobri/docs"
 	"bobri/internal/api/routes"
 	"bobri/internal/config"
+	"bobri/internal/models"
 	"bobri/pkg/helpers"
 	"github.com/gin-gonic/gin"
 	"log"
@@ -27,10 +28,19 @@ func main() {
 	}
 	AccessJwtMaker := helpers.NewJWTMaker([]byte(secret), 15*time.Minute)
 
+	fromEmail := os.Getenv("FROM_EMAIL")
+	emailPass := os.Getenv("EMAIL_PASSWORD")
+
+	if fromEmail == "" || emailPass == "" {
+		log.Fatal("Email credentials are missing in ENV")
+	}
+
 	// Создаем движок gin для работы с HTTP и регистрируем роутеры
 	engine := gin.Default()
 
-	routes.AuthRoutes(engine, db, AccessJwtMaker)
+	routes.AuthRoutes(engine, db, AccessJwtMaker, models.EmailAuth{
+		EmailFrom: fromEmail,
+		EmailPass: emailPass})
 	routes.AdminRoutes(engine, db, AccessJwtMaker)
 	routes.UserRoutes(engine, db, AccessJwtMaker)
 

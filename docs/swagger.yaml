@@ -1,13 +1,4 @@
 definitions:
-  models.Auth:
-    properties:
-      access_token:
-        type: string
-      expires_at:
-        type: integer
-      refresh_token:
-        type: string
-    type: object
   models.AuthBookRequest:
     properties:
       book_id:
@@ -17,13 +8,22 @@ definitions:
     properties:
       display_name:
         type: string
-      group:
-        type: string
       link_token:
         type: string
       link_token_ttl_sec:
         type: integer
       status:
+        type: string
+      student_group:
+        type: string
+    type: object
+  models.AuthTokens:
+    properties:
+      access_token:
+        type: string
+      expires_at:
+        type: integer
+      refresh_token:
         type: string
     type: object
   models.CompleteUserEventRequest:
@@ -40,6 +40,26 @@ definitions:
       event_id:
         type: integer
       user_id:
+        type: integer
+    type: object
+  models.CompletedEventsFullResponse:
+    properties:
+      events:
+        items:
+          $ref: '#/definitions/models.UserCompletedEvent'
+        type: array
+      stats:
+        $ref: '#/definitions/models.CompletedEventsStats'
+    type: object
+  models.CompletedEventsStats:
+    properties:
+      articles:
+        type: integer
+      hackathons:
+        type: integer
+      olympiads:
+        type: integer
+      projects:
         type: integer
     type: object
   models.CreateEventRequest:
@@ -140,30 +160,30 @@ definitions:
   models.LoginResponse:
     properties:
       auth:
-        $ref: '#/definitions/models.Auth'
+        $ref: '#/definitions/models.AuthTokens'
       user:
         $ref: '#/definitions/models.UserSubstructure'
     type: object
   models.ProfileResponse:
     properties:
-      birthDate:
+      birth_date:
         type: string
-      bookId:
-        format: int64
+      book_id:
         type: integer
       email:
         type: string
-      middleName:
+      middle_name:
         type: string
       name:
         type: string
-      roleLevel:
-        format: int64
+      role_level:
         type: integer
-      studentGroup:
+      student_group:
         type: string
       surname:
         type: string
+      total_points:
+        type: integer
     type: object
   models.RefreshTokenRequest:
     properties:
@@ -173,7 +193,7 @@ definitions:
   models.RefreshTokenResponse:
     properties:
       auth:
-        $ref: '#/definitions/models.Auth'
+        $ref: '#/definitions/models.AuthTokens'
       user_id:
         type: integer
     type: object
@@ -191,7 +211,7 @@ definitions:
   models.RegisterResponse:
     properties:
       auth:
-        $ref: '#/definitions/models.Auth'
+        $ref: '#/definitions/models.AuthTokens'
       user:
         $ref: '#/definitions/models.UserSubstructure'
     type: object
@@ -218,13 +238,13 @@ definitions:
         type: string
       book_id:
         type: integer
-      group:
-        type: string
       id:
         type: integer
       middle_name:
         type: string
       name:
+        type: string
+      student_group:
         type: string
       surname:
         type: string
@@ -259,54 +279,14 @@ definitions:
   models.UpdateUserRequest:
     properties:
       new_data:
-        properties:
-          book_id:
-            type: integer
-          email:
-            example: ""
-            type: string
-          middle_name:
-            example: ""
-            type: string
-          name:
-            example: ""
-            type: string
-          role_level:
-            type: integer
-          student_group:
-            example: ""
-            type: string
-          surname:
-            example: ""
-            type: string
-        type: object
+        $ref: '#/definitions/models.UserUpdateData'
       user_id:
         type: integer
     type: object
   models.UpdateUserResponse:
     properties:
-      new:
-        properties:
-          book_id:
-            type: integer
-          email:
-            example: ""
-            type: string
-          middle_name:
-            example: ""
-            type: string
-          name:
-            example: ""
-            type: string
-          role_level:
-            type: integer
-          student_group:
-            example: ""
-            type: string
-          surname:
-            example: ""
-            type: string
-        type: object
+      new_data:
+        $ref: '#/definitions/models.UserUpdateData'
       successful:
         type: boolean
       user_id:
@@ -358,6 +338,36 @@ definitions:
         type: integer
       student_group:
         type: string
+    type: object
+  models.UserUpdateData:
+    properties:
+      book_id:
+        type: integer
+      email:
+        type: string
+      middle_name:
+        type: string
+      name:
+        type: string
+      role_level:
+        type: integer
+      student_group:
+        type: string
+      surname:
+        type: string
+    type: object
+  models.UserWithPoints:
+    properties:
+      name:
+        type: string
+      position:
+        type: integer
+      surname:
+        type: string
+      total_points:
+        type: integer
+      user_id:
+        type: integer
     type: object
 info:
   contact: {}
@@ -795,8 +805,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Студенческий найден, выдан регистрационный токен" example({"status":"free","display_name":"Иван","group":"ШАД-111",
-            "LinkToken":"raw_token_string","LinkTokenTtlSec":300})
+          description: Студенческий найден, выдан регистрационный токен
           schema:
             $ref: '#/definitions/models.AuthStatus'
         "400":
@@ -822,9 +831,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: |-
-        Проверяет почту и пароль пользователя.
-        При успешной авторизации выдает пару access и refresh токенов.
+      description: Проверяет почту и пароль пользователя. При успешной авторизации
+        выдает пару access и refresh токенов.
       parameters:
       - description: Данные для входа (почта и пароль)
         in: body
@@ -836,9 +844,7 @@ paths:
       - application/json
       responses:
         "200":
-          description: Успешная авторизация — возвращается пользователь и пара токенов"
-            example({"user":{"id":1,"first_name":"Иван","surname":"Иванов"},"session":{"auth":{"access_token":"token
-            string", "refresh_token":"token string","expires_at":"2024-01-01T00:00:00Z"}}})
+          description: Успешная авторизация — возвращается пользователь и пара токенов
           schema:
             $ref: '#/definitions/models.LoginResponse'
         "400":
@@ -846,7 +852,7 @@ paths:
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
-          description: Неверная почта или пароль
+          description: Неправильный пароль
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "404":
@@ -902,7 +908,7 @@ paths:
       description: Регистрирует нового пользователя на основе временного токена, выданного
         после проверки студенческого билета.
       parameters:
-      - description: Почта, пароль и токен регистрации пользователя
+      - description: Почта, пароль и регистрационный токен
         in: body
         name: input
         required: true
@@ -911,20 +917,16 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
+        "201":
           description: Успешная регистрация
           schema:
             $ref: '#/definitions/models.RegisterResponse'
         "400":
-          description: Некорректный запрос или формат данных
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-        "401":
-          description: Токен не найден или истёк
+          description: Некорректный формат JSON или токен истёк
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Студент с такой почтой не найден
+          description: Студент с таким номером студенческого не найден
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "409":
@@ -1007,13 +1009,44 @@ paths:
       summary: Установка нового пароля
       tags:
       - auth
-  /completed_events/{user_id}:
+  /leaderboard:
     get:
-      consumes:
-      - application/json
-      description: Возвращает список событий, которые пользователь отметил как выполненные.
+      description: Возвращает список пользователей, отсортированный по количеству
+        набранных очков.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: 50
+        description: Максимальное количество пользователей в выдаче
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список пользователей с их количеством очков
+          schema:
+            items:
+              $ref: '#/definitions/models.UserWithPoints'
+            type: array
+        "500":
+          description: Ошибка при получении лидерборда
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: Лидерборд пользователей
+      tags:
+      - user
+  /me/completed_events:
+    get:
+      description: |-
+        Возвращает список выполненных пользователем событий, а также статистику по категориям:
+        - Хакатоны (type = 1)
+        - Статьи (type = 2)
+        - Олимпиады (type = 3)
+        - Проекты (type = 4)
+      parameters:
+      - description: 'Bearer токен в формате: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -1022,27 +1055,19 @@ paths:
       - application/json
       responses:
         "200":
-          description: Список выполненных пользователем событий
+          description: OK
           schema:
-            items:
-              $ref: '#/definitions/models.UserCompletedEvent'
-            type: array
-        "400":
-          description: Некорректный user_id
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
-        "401":
-          description: Нет доступа
-          schema:
-            $ref: '#/definitions/models.ErrorResponse'
+            $ref: '#/definitions/models.CompletedEventsFullResponse'
         "500":
-          description: Ошибка сервера при получении выполненных событий
+          description: Ошибка при получении данных
           schema:
             $ref: '#/definitions/models.ErrorResponse'
-      summary: Получить выполненные события
+      security:
+      - BearerAuth: []
+      summary: Получить выполненные события пользователя
       tags:
       - user
-  /profile:
+  /me/profile:
     get:
       description: Возвращает данные о пользователе
       parameters:

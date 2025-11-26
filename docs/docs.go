@@ -656,7 +656,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Студенческий найден, выдан регистрационный токен\" example({\"status\":\"free\",\"display_name\":\"Иван\",\"group\":\"ШАД-111\", \"LinkToken\":\"raw_token_string\",\"LinkTokenTtlSec\":300})",
+                        "description": "Студенческий найден, выдан регистрационный токен",
                         "schema": {
                             "$ref": "#/definitions/models.AuthStatus"
                         }
@@ -690,7 +690,7 @@ const docTemplate = `{
         },
         "/auth/login": {
             "post": {
-                "description": "Проверяет почту и пароль пользователя.\nПри успешной авторизации выдает пару access и refresh токенов.",
+                "description": "Проверяет почту и пароль пользователя. При успешной авторизации выдает пару access и refresh токенов.",
                 "consumes": [
                     "application/json"
                 ],
@@ -714,7 +714,7 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Успешная авторизация — возвращается пользователь и пара токенов\" example({\"user\":{\"id\":1,\"first_name\":\"Иван\",\"surname\":\"Иванов\"},\"session\":{\"auth\":{\"access_token\":\"token string\", \"refresh_token\":\"token string\",\"expires_at\":\"2024-01-01T00:00:00Z\"}}})",
+                        "description": "Успешная авторизация — возвращается пользователь и пара токенов",
                         "schema": {
                             "$ref": "#/definitions/models.LoginResponse"
                         }
@@ -726,7 +726,7 @@ const docTemplate = `{
                         }
                     },
                     "401": {
-                        "description": "Неверная почта или пароль",
+                        "description": "Неправильный пароль",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -813,7 +813,7 @@ const docTemplate = `{
                 "summary": "Регистрация пользователя по токену",
                 "parameters": [
                     {
-                        "description": "Почта, пароль и токен регистрации пользователя",
+                        "description": "Почта, пароль и регистрационный токен",
                         "name": "input",
                         "in": "body",
                         "required": true,
@@ -823,26 +823,20 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
+                    "201": {
                         "description": "Успешная регистрация",
                         "schema": {
                             "$ref": "#/definitions/models.RegisterResponse"
                         }
                     },
                     "400": {
-                        "description": "Некорректный запрос или формат данных",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Токен не найден или истёк",
+                        "description": "Некорректный формат JSON или токен истёк",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
                     },
                     "404": {
-                        "description": "Студент с такой почтой не найден",
+                        "description": "Студент с таким номером студенческого не найден",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -963,52 +957,42 @@ const docTemplate = `{
                 }
             }
         },
-        "/completed_events/{user_id}": {
+        "/leaderboard": {
             "get": {
-                "description": "Возвращает список событий, которые пользователь отметил как выполненные.",
-                "consumes": [
-                    "application/json"
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
                 ],
+                "description": "Возвращает список пользователей, отсортированный по количеству набранных очков.",
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "user"
                 ],
-                "summary": "Получить выполненные события",
+                "summary": "Лидерборд пользователей",
                 "parameters": [
                     {
-                        "type": "string",
-                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
-                        "name": "Authorization",
-                        "in": "header",
-                        "required": true
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Максимальное количество пользователей в выдаче",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Список выполненных пользователем событий",
+                        "description": "Список пользователей с их количеством очков",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/models.UserCompletedEvent"
+                                "$ref": "#/definitions/models.UserWithPoints"
                             }
                         }
                     },
-                    "400": {
-                        "description": "Некорректный user_id",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Нет доступа",
-                        "schema": {
-                            "$ref": "#/definitions/models.ErrorResponse"
-                        }
-                    },
                     "500": {
-                        "description": "Ошибка сервера при получении выполненных событий",
+                        "description": "Ошибка при получении лидерборда",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -1016,7 +1000,47 @@ const docTemplate = `{
                 }
             }
         },
-        "/profile": {
+        "/me/completed_events": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Возвращает список выполненных пользователем событий, а также статистику по категориям:\n- Хакатоны (type = 1)\n- Статьи (type = 2)\n- Олимпиады (type = 3)\n- Проекты (type = 4)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Получить выполненные события пользователя",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен в формате: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.CompletedEventsFullResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении данных",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/me/profile": {
             "get": {
                 "security": [
                     {
@@ -1059,20 +1083,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "models.Auth": {
-            "type": "object",
-            "properties": {
-                "access_token": {
-                    "type": "string"
-                },
-                "expires_at": {
-                    "type": "integer"
-                },
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
         "models.AuthBookRequest": {
             "type": "object",
             "properties": {
@@ -1087,9 +1097,6 @@ const docTemplate = `{
                 "display_name": {
                     "type": "string"
                 },
-                "group": {
-                    "type": "string"
-                },
                 "link_token": {
                     "type": "string"
                 },
@@ -1097,6 +1104,23 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "status": {
+                    "type": "string"
+                },
+                "student_group": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.AuthTokens": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "expires_at": {
+                    "type": "integer"
+                },
+                "refresh_token": {
                     "type": "string"
                 }
             }
@@ -1122,6 +1146,37 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "user_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.CompletedEventsFullResponse": {
+            "type": "object",
+            "properties": {
+                "events": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.UserCompletedEvent"
+                    }
+                },
+                "stats": {
+                    "$ref": "#/definitions/models.CompletedEventsStats"
+                }
+            }
+        },
+        "models.CompletedEventsStats": {
+            "type": "object",
+            "properties": {
+                "articles": {
+                    "type": "integer"
+                },
+                "hackathons": {
+                    "type": "integer"
+                },
+                "olympiads": {
+                    "type": "integer"
+                },
+                "projects": {
                     "type": "integer"
                 }
             }
@@ -1276,7 +1331,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "auth": {
-                    "$ref": "#/definitions/models.Auth"
+                    "$ref": "#/definitions/models.AuthTokens"
                 },
                 "user": {
                     "$ref": "#/definitions/models.UserSubstructure"
@@ -1286,31 +1341,32 @@ const docTemplate = `{
         "models.ProfileResponse": {
             "type": "object",
             "properties": {
-                "birthDate": {
+                "birth_date": {
                     "type": "string"
                 },
-                "bookId": {
-                    "type": "integer",
-                    "format": "int64"
+                "book_id": {
+                    "type": "integer"
                 },
                 "email": {
                     "type": "string"
                 },
-                "middleName": {
+                "middle_name": {
                     "type": "string"
                 },
                 "name": {
                     "type": "string"
                 },
-                "roleLevel": {
-                    "type": "integer",
-                    "format": "int64"
+                "role_level": {
+                    "type": "integer"
                 },
-                "studentGroup": {
+                "student_group": {
                     "type": "string"
                 },
                 "surname": {
                     "type": "string"
+                },
+                "total_points": {
+                    "type": "integer"
                 }
             }
         },
@@ -1326,7 +1382,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "auth": {
-                    "$ref": "#/definitions/models.Auth"
+                    "$ref": "#/definitions/models.AuthTokens"
                 },
                 "user_id": {
                     "type": "integer"
@@ -1354,7 +1410,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "auth": {
-                    "$ref": "#/definitions/models.Auth"
+                    "$ref": "#/definitions/models.AuthTokens"
                 },
                 "user": {
                     "$ref": "#/definitions/models.UserSubstructure"
@@ -1396,9 +1452,6 @@ const docTemplate = `{
                 "book_id": {
                     "type": "integer"
                 },
-                "group": {
-                    "type": "string"
-                },
                 "id": {
                     "type": "integer"
                 },
@@ -1406,6 +1459,9 @@ const docTemplate = `{
                     "type": "string"
                 },
                 "name": {
+                    "type": "string"
+                },
+                "student_group": {
                     "type": "string"
                 },
                 "surname": {
@@ -1459,35 +1515,7 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "new_data": {
-                    "type": "object",
-                    "properties": {
-                        "book_id": {
-                            "type": "integer"
-                        },
-                        "email": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "middle_name": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "name": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "role_level": {
-                            "type": "integer"
-                        },
-                        "student_group": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "surname": {
-                            "type": "string",
-                            "example": ""
-                        }
-                    }
+                    "$ref": "#/definitions/models.UserUpdateData"
                 },
                 "user_id": {
                     "type": "integer"
@@ -1497,36 +1525,8 @@ const docTemplate = `{
         "models.UpdateUserResponse": {
             "type": "object",
             "properties": {
-                "new": {
-                    "type": "object",
-                    "properties": {
-                        "book_id": {
-                            "type": "integer"
-                        },
-                        "email": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "middle_name": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "name": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "role_level": {
-                            "type": "integer"
-                        },
-                        "student_group": {
-                            "type": "string",
-                            "example": ""
-                        },
-                        "surname": {
-                            "type": "string",
-                            "example": ""
-                        }
-                    }
+                "new_data": {
+                    "$ref": "#/definitions/models.UserUpdateData"
                 },
                 "successful": {
                     "type": "boolean"
@@ -1605,6 +1605,52 @@ const docTemplate = `{
                 },
                 "student_group": {
                     "type": "string"
+                }
+            }
+        },
+        "models.UserUpdateData": {
+            "type": "object",
+            "properties": {
+                "book_id": {
+                    "type": "integer"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "middle_name": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "role_level": {
+                    "type": "integer"
+                },
+                "student_group": {
+                    "type": "string"
+                },
+                "surname": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.UserWithPoints": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "surname": {
+                    "type": "string"
+                },
+                "total_points": {
+                    "type": "integer"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         }
