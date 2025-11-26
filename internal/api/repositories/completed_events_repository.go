@@ -11,10 +11,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-var (
-	ErrNoCompletedEvents = errors.New("Нет выполненных событий")
-)
-
 type CompletedEventsRepository struct {
 	db *pgxpool.Pool
 }
