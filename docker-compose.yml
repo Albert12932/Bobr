@@ -32,26 +32,6 @@ services:
     networks:
       - internal
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-#  caddy:
-#    image: caddy:2
-#    restart: unless-stopped
-#    ports:
-#        - "80:80"
-#        - "443:443"
-#    volumes:
-#        - ./build/Caddyfile:/etc/caddy/Caddyfile:ro
-#        - /home/althgamer/admin_frontend/web:/srv/beavers_admin:ro
-#        - caddy_data:/data
-#        - caddy_config:/config
-#    depends_on:
-#        - app
-#    networks:
-#        - internal
-=======
-=======
->>>>>>> Stashed changes
   caddy:
     image: caddy:2
     restart: unless-stopped
@@ -67,10 +47,6 @@ services:
       - app
     networks:
       - internal
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
 
 volumes:
   pgdata:
