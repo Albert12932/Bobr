@@ -26,4 +26,8 @@ admin.beavers.althgamer.ru {
         try_files {path} /index.html
         file_server
     }
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes
