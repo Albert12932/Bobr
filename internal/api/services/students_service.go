@@ -7,37 +7,38 @@ import (
 	"context"
 	"errors"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"time"
 )
 
 var (
-	ErrStudentByBookIdNotFound = errors.New("не удалось найти пользователя")
-	ErrUserAlreadyExists       = errors.New("пользователь с таким номером зачетки уже существует")
-	ErrTokenGenerationError    = errors.New("ошибка при генерации токена")
-	ErrUpsetLinkToken          = errors.New("failed to upsert link token")
+	ErrUserAlreadyExists    = errors.New("пользователь с таким номером зачетки уже существует")
+	ErrTokenGenerationError = errors.New("ошибка при генерации токена")
+	ErrUpsetLinkToken       = errors.New("не удалось сохранить link token")
 )
 
 type StudentsService struct {
 	studentsRepo *repositories.StudentsRepository
-	db           *pgxpool.Pool
+	uow          *repositories.UoW
 }
 
-func NewStudentsService(repository *repositories.StudentsRepository, db *pgxpool.Pool) *StudentsService {
+func NewStudentsService(repo *repositories.StudentsRepository, uow *repositories.UoW) *StudentsService {
 	return &StudentsService{
-		studentsRepo: repository,
-		db:           db,
+		studentsRepo: repo,
+		uow:          uow,
 	}
 }
 
 func (s *StudentsService) CheckStudent(ctx context.Context, bookId int64) (models.AuthStatus, error) {
+	// проверяем, есть ли студент
 	student, err := s.studentsRepo.GetStudentByBookId(ctx, bookId)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return models.AuthStatus{}, ErrStudentByBookIdNotFound
 		}
+		return models.AuthStatus{}, err
 	}
 
+	// проверяем, есть ли уже пользователь с таким book id
 	exists, err := s.studentsRepo.UserExistsByBookId(ctx, bookId)
 	if err != nil {
 		return models.AuthStatus{}, err
@@ -46,34 +47,32 @@ func (s *StudentsService) CheckStudent(ctx context.Context, bookId int64) (model
 		return models.AuthStatus{}, ErrUserAlreadyExists
 	}
 
+	// генерируем token
 	rawToken, err := helpers.GenerateTokenRaw(32)
 	if err != nil {
 		return models.AuthStatus{}, ErrTokenGenerationError
 	}
+
 	tokenHash := helpers.HashToken(rawToken)
 	expiresAt := time.Now().Add(helpers.LinkTokenTTL)
 
-	tx, err := s.db.Begin(ctx)
+	// транзакция через UoW
+	err = s.uow.WithinTransaction(ctx, func(ctx context.Context, tx repositories.DBTX) error {
+		tag, err := s.studentsRepo.WithDB(tx).UpsertLinkToken(ctx, bookId, tokenHash, expiresAt)
+		if err != nil {
+			return err
+		}
+		if tag.RowsAffected() != 1 {
+			return ErrUpsetLinkToken
+		}
+
+		return nil
+	})
 	if err != nil {
 		return models.AuthStatus{}, err
 	}
 
-	defer func() {
-		_ = tx.Rollback(ctx)
-	}()
-
-	tag, err := s.studentsRepo.UpsertLinkTokenTx(ctx, tx, bookId, tokenHash, expiresAt)
-	if err != nil {
-		return models.AuthStatus{}, err
-	}
-	if tag.RowsAffected() != 1 {
-		return models.AuthStatus{}, ErrUpsetLinkToken
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return models.AuthStatus{}, err
-	}
-
+	// успешный ответ
 	return models.AuthStatus{
 		Status:          "free",
 		DisplayName:     student.Name,
@@ -81,8 +80,8 @@ func (s *StudentsService) CheckStudent(ctx context.Context, bookId int64) (model
 		LinkToken:       rawToken,
 		LinkTokenTtlSec: int64(helpers.LinkTokenTTL.Seconds()),
 	}, nil
-
 }
+
 func (s *StudentsService) GetStudents(ctx context.Context) ([]models.Student, error) {
 	return s.studentsRepo.GetAllStudents(ctx)
 }

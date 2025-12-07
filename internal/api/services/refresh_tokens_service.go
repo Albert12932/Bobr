@@ -6,32 +6,33 @@ import (
 	"bobri/pkg/helpers"
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
-	ErrNoRowsAffected = errors.New("no rows affected")
-	ErrNoTokensFound  = errors.New("no tokens found")
-	ErrRowsAffected   = errors.New("rows affected is not equal to 1")
+	ErrNoTokensFound = errors.New("no tokens found")
 )
 
 type RefreshTokensService struct {
-	refreshTokensRepo *repositories.RefreshTokensRepository
-	jwtMaker          *helpers.JWTMaker
-	db                *pgxpool.Pool
+	refreshRepo   *repositories.RefreshTokensRepository
+	tokenProvider *TokenProvider
+	uow           *repositories.UoW
 }
 
-func NewRefreshTokensService(db *pgxpool.Pool, refreshTokensRepo *repositories.RefreshTokensRepository, jwtMaker *helpers.JWTMaker) *RefreshTokensService {
+func NewRefreshTokensService(
+	refreshRepo *repositories.RefreshTokensRepository,
+	tokenProvider *TokenProvider,
+	uow *repositories.UoW,
+) *RefreshTokensService {
 	return &RefreshTokensService{
-		refreshTokensRepo: refreshTokensRepo,
-		jwtMaker:          jwtMaker,
-		db:                db,
+		refreshRepo:   refreshRepo,
+		tokenProvider: tokenProvider,
+		uow:           uow,
 	}
 }
 
 func (s *RefreshTokensService) RefreshToken(ctx context.Context, refreshToken string) (models.RefreshTokenResponse, error) {
-	userId, err := s.refreshTokensRepo.GetUserIdByRefreshToken(ctx, helpers.HashToken(refreshToken))
+	// проверяем токен
+	userId, err := s.refreshRepo.GetUserIdByRefreshToken(ctx, helpers.HashToken(refreshToken))
 	if err != nil {
 		return models.RefreshTokenResponse{}, err
 	}
@@ -39,61 +40,33 @@ func (s *RefreshTokensService) RefreshToken(ctx context.Context, refreshToken st
 		return models.RefreshTokenResponse{}, ErrNoTokensFound
 	}
 
-	roleLevel, err := s.refreshTokensRepo.GetRoleLevelByUserId(ctx, userId)
+	// роль пользователя
+	roleLevel, err := s.refreshRepo.GetRoleLevelByUserId(ctx, userId)
 	if err != nil {
 		return models.RefreshTokenResponse{}, err
 	}
 
-	// Генерируем новый access token
-	accessToken, expiresAt, err := s.jwtMaker.Issue(userId, roleLevel)
+	var tokens models.GetTokensResponse
+
+	// транзакция через UoW
+	err = s.uow.WithinTransaction(ctx, func(ctx context.Context, tx repositories.DBTX) error {
+		// TokenProvider сам:
+		// - удаляет старые токены
+		// - генерирует новые
+		// - сохраняет обновленные значения
+		tokens, err = s.tokenProvider.IssuePair(ctx, tx, userId, roleLevel)
+		return err
+	})
 	if err != nil {
 		return models.RefreshTokenResponse{}, err
 	}
 
-	// Генерируем новый refresh token
-	newRefreshToken, err := helpers.NewRefreshToken()
-	if err != nil {
-		return models.RefreshTokenResponse{}, err
-	}
-
-	// Начинаем транзакцию
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return models.RefreshTokenResponse{}, err
-	}
-
-	defer func() {
-		if er := tx.Rollback(ctx); er != nil && !errors.Is(er, pgx.ErrTxClosed) {
-			// логируем, но не ломаем успешный путь
-		}
-	}()
-
-	// Обновляем refresh token
-	tag, err := s.refreshTokensRepo.UpdateRefreshTokenTx(
-		ctx,
-		tx,
-		userId,
-		helpers.HashToken(newRefreshToken),
-	)
-	if err != nil {
-		return models.RefreshTokenResponse{}, err
-	}
-	if tag.RowsAffected() == 0 {
-		return models.RefreshTokenResponse{}, ErrNoRowsAffected
-	}
-
-	// Коммитим транзакцию
-	if err := tx.Commit(ctx); err != nil {
-		return models.RefreshTokenResponse{}, err
-	}
-
-	// Формируем ответ
 	return models.RefreshTokenResponse{
 		UserID: userId,
 		AuthTokens: models.AuthTokens{
-			AccessToken:  accessToken,
-			RefreshToken: newRefreshToken,
-			ExpUnix:      expiresAt,
+			AccessToken:  tokens.AccessToken,
+			RefreshToken: tokens.RefreshToken,
+			ExpUnix:      tokens.ExpUnix,
 		},
 	}, nil
 }

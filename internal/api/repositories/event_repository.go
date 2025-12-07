@@ -3,22 +3,29 @@ package repositories
 import (
 	"bobri/internal/models"
 	"context"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// EventRepository Репозиторий использует гибкий интерфейс DBTX.
+// Это позволяет одинаково работать с пулом и транзакцией.
 type EventRepository struct {
-	db *pgxpool.Pool
+	db DBTX
 }
 
-func NewEventRepository(db *pgxpool.Pool) *EventRepository {
+func NewEventRepository(db DBTX) *EventRepository {
 	return &EventRepository{db: db}
 }
 
-func (r *EventRepository) CreateEvent(ctx context.Context, data models.CreateEventRequest) (int64, error) {
+// WithDB Нужен для передачи транзакции в репозиторий
+func (r *EventRepository) WithDB(db DBTX) *EventRepository {
+	return &EventRepository{db: db}
+}
 
+// CreateEvent Создать событие
+func (r *EventRepository) CreateEvent(ctx context.Context, data models.CreateEventRequest) (int64, error) {
 	builder := sq.Insert("events")
 
 	columns := []string{"title"}
@@ -58,13 +65,21 @@ func (r *EventRepository) CreateEvent(ctx context.Context, data models.CreateEve
 	return id, err
 }
 
+// GetEventById Получить событие по id
 func (r *EventRepository) GetEventById(ctx context.Context, id int64) (models.CreateEventResponse, error) {
 	var result models.CreateEventResponse
+
 	err := pgxscan.Get(ctx, r.db, &result,
-		`SELECT id, title, description, event_type_code, points, icon_url, event_date, created_at
-         FROM events WHERE id = $1`, id)
+		`SELECT id, title, description, event_type_code, points,
+		        icon_url, event_date, created_at
+         FROM events WHERE id = $1`,
+		id,
+	)
+
 	return result, err
 }
+
+// DeleteEvent Удалить событие
 func (r *EventRepository) DeleteEvent(ctx context.Context, eventId int64) (pgconn.CommandTag, error) {
 	return r.db.Exec(ctx,
 		`DELETE FROM events WHERE id = $1`,
@@ -72,17 +87,20 @@ func (r *EventRepository) DeleteEvent(ctx context.Context, eventId int64) (pgcon
 	)
 }
 
+// GetEvents Получить список всех событий
 func (r *EventRepository) GetEvents(ctx context.Context) ([]models.Event, error) {
 	var events []models.Event
 
 	err := pgxscan.Select(ctx, r.db, &events,
 		`SELECT id, title, description, event_type_code, points,
 		        icon_url, event_date, created_at
-		 FROM events`)
+		 FROM events`,
+	)
 
 	return events, err
 }
 
+// UpdateEvent Обновить данные события
 func (r *EventRepository) UpdateEvent(ctx context.Context, req models.UpdateEventRequest) error {
 	builder := sq.Update("events")
 
@@ -107,11 +125,11 @@ func (r *EventRepository) UpdateEvent(ctx context.Context, req models.UpdateEven
 
 	builder = builder.Where(sq.Eq{"id": req.EventId})
 
-	sqlQuery, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
 		return err
 	}
 
-	_, err = r.db.Exec(ctx, sqlQuery, args...)
+	_, err = r.db.Exec(ctx, query, args...)
 	return err
 }

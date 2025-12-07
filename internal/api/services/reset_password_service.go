@@ -5,38 +5,40 @@ import (
 	"bobri/pkg/helpers"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
-	"log"
 	"time"
 )
 
 var (
-	ErrInvalidResetToken = errors.New("невалидный или истёкший токен")
+	ErrInvalidResetToken = errors.New("невалидный или истекший токен")
 	ErrWeakPassword      = errors.New("слишком слабый пароль")
 )
 
 type ResetPasswordService struct {
-	repo          *repositories.ResetPasswordRepository
+	resetRepo     *repositories.ResetPasswordRepository
+	userRepo      *repositories.UserRepository
 	emailProvider *EmailProvider
-	db            *pgxpool.Pool
+	uow           *repositories.UoW
 }
 
 func NewResetPasswordService(
-	repo *repositories.ResetPasswordRepository,
+	resetRepo *repositories.ResetPasswordRepository,
+	userRepo *repositories.UserRepository,
 	emailProvider *EmailProvider,
-	db *pgxpool.Pool,
+	uow *repositories.UoW,
 ) *ResetPasswordService {
 	return &ResetPasswordService{
-		repo:          repo,
+		resetRepo:     resetRepo,
+		userRepo:      userRepo,
 		emailProvider: emailProvider,
-		db:            db,
+		uow:           uow,
 	}
 }
 
 func (s *ResetPasswordService) ResetPassword(ctx context.Context, email string) error {
-	userId, err := s.repo.GetUserIdByEmail(ctx, email)
+	userId, err := s.resetRepo.GetUserIdByEmail(ctx, email)
 	if err != nil {
 		return ErrUserNotFound
 	}
@@ -49,39 +51,31 @@ func (s *ResetPasswordService) ResetPassword(ctx context.Context, email string) 
 	tokenHash := helpers.HashToken(rawToken)
 	expiresAt := time.Now().Add(15 * time.Minute)
 
-	tx, err := s.db.Begin(ctx)
+	// выполняем в транзакции
+	err = s.uow.WithinTransaction(ctx, func(ctx context.Context, tx repositories.DBTX) error {
+		return s.resetRepo.WithDB(tx).UpsertResetToken(ctx, userId, email, tokenHash, expiresAt)
+	})
 	if err != nil {
 		return err
 	}
 
-	defer func() {
-		if er := tx.Rollback(ctx); er != nil && !errors.Is(er, pgx.ErrTxClosed) {
-			log.Println("rollback failed:", er)
-		}
-	}()
-
-	err = s.repo.UpsertResetToken(ctx, tx, userId, email, tokenHash, expiresAt)
-	if err != nil {
-		return err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-
+	fmt.Println("token:", rawToken)
 	return s.emailProvider.SendResetPassword(email, rawToken)
+
 }
-
 func (s *ResetPasswordService) SetNewPassword(ctx context.Context, token string, newPassword string) error {
-
 	tokenHash := helpers.HashToken(token)
 
-	userId, err := s.repo.GetUserIdByResetToken(ctx, tokenHash)
+	userId, err := s.resetRepo.GetUserIdByResetToken(ctx, tokenHash)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return ErrInvalidResetToken
 		}
 		return err
+	}
+
+	if userId == 0 {
+		return ErrInvalidResetToken
 	}
 
 	if len(newPassword) < 8 {
@@ -93,32 +87,19 @@ func (s *ResetPasswordService) SetNewPassword(ctx context.Context, token string,
 		return err
 	}
 
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
-
-	defer func() {
-		if er := tx.Rollback(ctx); er != nil && !errors.Is(er, pgx.ErrTxClosed) {
-			log.Println("rollback failed:", er)
+	return s.uow.WithinTransaction(ctx, func(ctx context.Context, tx repositories.DBTX) error {
+		// обновляем пароль
+		err := s.userRepo.WithDB(tx).UpdatePassword(ctx, userId, hashedPassword)
+		if err != nil {
+			return err
 		}
-	}()
 
-	_, err = tx.Exec(ctx, `
-		UPDATE users SET password = $1 WHERE id = $2
-	`, hashedPassword, userId)
-	if err != nil {
-		return err
-	}
+		// удаляем токен
+		err = s.resetRepo.WithDB(tx).DeleteResetToken(ctx, userId)
+		if err != nil {
+			return err
+		}
 
-	err = s.repo.DeleteResetTokenTx(ctx, tx, userId)
-	if err != nil {
-		return err
-	}
-
-	if err := tx.Commit(ctx); err != nil {
-		return err
-	}
-
-	return nil
+		return nil
+	})
 }

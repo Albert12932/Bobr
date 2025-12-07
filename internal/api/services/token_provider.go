@@ -5,8 +5,13 @@ import (
 	"bobri/internal/models"
 	"bobri/pkg/helpers"
 	"context"
-	"github.com/jackc/pgx/v5"
+	"errors"
 	"time"
+)
+
+var (
+	ErrRowsAffected   = errors.New("rows affected != 1")
+	ErrNoRowsAffected = errors.New("zero rows affected")
 )
 
 type TokenProvider struct {
@@ -21,29 +26,31 @@ func NewTokenProvider(jwt *helpers.JWTMaker, repo *repositories.RefreshTokensRep
 	}
 }
 
-func (p *TokenProvider) IssuePairTx(ctx context.Context, tx pgx.Tx, userId, roleLevel int64) (models.GetTokensResponse, error) {
-	accessToken, exp, err := p.jwtMaker.Issue(userId, roleLevel)
+// IssuePair генерирует access token и refresh token и сохраняет обновленный refresh token.
+// Работает с DBTX, что позволяет использовать и транзакцию, и пул.
+func (p *TokenProvider) IssuePair(ctx context.Context, db repositories.DBTX, userId, roleLevel int64) (models.GetTokensResponse, error) {
+	// генерируем access token
+	accessToken, expUnix, err := p.jwtMaker.Issue(userId, roleLevel)
 	if err != nil {
 		return models.GetTokensResponse{}, err
 	}
 
-	_, err = p.refreshTokensRepo.DeleteRefreshTokensTx(ctx, tx, userId)
+	// удаляем предыдущие refresh токены
+	_, err = p.refreshTokensRepo.WithDB(db).DeleteRefreshTokens(ctx, userId)
 	if err != nil {
 		return models.GetTokensResponse{}, err
 	}
 
-	refreshToken, err := helpers.NewRefreshToken()
+	// создаем новый refresh token
+	rawRefreshToken, err := helpers.NewRefreshToken()
 	if err != nil {
 		return models.GetTokensResponse{}, err
 	}
 
-	tag, err := p.refreshTokensRepo.CreateRefreshTokenTx(
-		ctx,
-		tx,
-		userId,
-		helpers.HashToken(refreshToken),
-		time.Now().Add(30*24*time.Hour),
-	)
+	hash := helpers.HashToken(rawRefreshToken)
+	expiresAt := time.Now().Add(30 * 24 * time.Hour)
+
+	tag, err := p.refreshTokensRepo.WithDB(db).CreateRefreshToken(ctx, userId, hash, expiresAt)
 	if err != nil {
 		return models.GetTokensResponse{}, err
 	}
@@ -54,7 +61,7 @@ func (p *TokenProvider) IssuePairTx(ctx context.Context, tx pgx.Tx, userId, role
 
 	return models.GetTokensResponse{
 		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		ExpUnix:      exp,
+		RefreshToken: rawRefreshToken,
+		ExpUnix:      expUnix,
 	}, nil
 }
