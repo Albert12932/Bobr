@@ -48,7 +48,7 @@ func UpdateUser(service *services.UserService) gin.HandlerFunc {
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
 
-		resp, err := service.UpdateUser(ctx, payload.RoleLevel, req)
+		resp, err := service.UpdateUser(ctx, payload.RoleLevel, req) // TODO redactor admin
 		if err != nil {
 			if err.Error() == "недостаточно прав" {
 				c.JSON(http.StatusForbidden, models.ErrorResponse{
