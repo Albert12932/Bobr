@@ -31,4 +31,5 @@ func UserRoutes(r *gin.Engine, db *pgxpool.Pool, accessJWTMaker *helpers.JWTMake
 
 	// паблик маршрут
 	r.GET("/leaderboard", users.GetLeaderboard(userService))
+	r.GET("/get_suggests", users.GetSuggests(userService))
 }

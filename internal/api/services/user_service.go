@@ -88,3 +88,7 @@ func (s *UserService) GetLeaderboard(ctx context.Context, limit int) ([]models.U
 
 	return s.userRepo.GetLeaderboard(ctx, limit)
 }
+
+func (s *UserService) GetSuggestions(ctx context.Context) ([]models.Event, error) {
+	return s.userRepo.GetSuggests(ctx)
+}

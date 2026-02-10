@@ -186,6 +186,59 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/create_suggest": {
+            "post": {
+                "description": "Создаёт рекомендацию для события с указанием времени истечения в часах с момента создания. Возвращает ID события. Требует авторизации пользователя.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Создать рекомендацию для события",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Данные для создания рекомендации",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateSuggestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "ID события, для которого была создана рекомендация",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный JSON",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка сервера при создании рекомендации",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/delete_completed_event/{user_id}/{event_id}": {
             "delete": {
                 "description": "Удаляет отметку о выполнении события конкретным пользователем. Требует прав администратора.",
@@ -319,9 +372,67 @@ const docTemplate = `{
                 }
             }
         },
-        "/admin/delete_user/{email}": {
+        "/admin/delete_suggestion/{id}": {
             "delete": {
-                "description": "Удаляет пользователя по его email. Требует прав администратора.",
+                "description": "Удаляет рекомендацию по заданному ID. Если рекомендация не найдена, возвращает ошибку 404. В случае других ошибок возвращается ошибка 500.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Удалить рекомендацию по ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "format": "int64",
+                        "description": "ID рекомендации для удаления",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Рекомендация успешно удалена",
+                        "schema": {
+                            "$ref": "#/definitions/models.DeleteEventResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Некорректный формат ID рекомендации",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Рекомендация с таким ID не найдено",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при удалении рекомендации",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/delete_user/{user_id}": {
+            "delete": {
+                "description": "Удаляет пользователя по его user_id. Требует прав администратора.",
                 "consumes": [
                     "application/json"
                 ],
@@ -342,7 +453,7 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "description": "Email удаляемого пользователя",
+                        "description": "UserId удаляемого пользователя",
                         "name": "email",
                         "in": "path",
                         "required": true
@@ -356,7 +467,7 @@ const docTemplate = `{
                         }
                     },
                     "400": {
-                        "description": "Передан пустой email",
+                        "description": "Передан пустой id пользователя",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -368,7 +479,7 @@ const docTemplate = `{
                         }
                     },
                     "404": {
-                        "description": "Пользователь с таким email не найден",
+                        "description": "Пользователь с таким user_id не найден",
                         "schema": {
                             "$ref": "#/definitions/models.ErrorResponse"
                         }
@@ -957,6 +1068,47 @@ const docTemplate = `{
                 }
             }
         },
+        "/get_suggests": {
+            "get": {
+                "description": "Возвращает список рекомендаций для событий. Если произошла ошибка при получении данных, возвращается код ошибки 500.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Получить список рекомендаций для событий",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Bearer токен авторизации. Формат: Bearer {token}",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Список рекомендаций событий",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Event"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Ошибка при получении рекомендаций",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/leaderboard": {
             "get": {
                 "security": [
@@ -1236,6 +1388,20 @@ const docTemplate = `{
                 }
             }
         },
+        "models.CreateSuggestRequest": {
+            "type": "object",
+            "required": [
+                "event_id"
+            ],
+            "properties": {
+                "event_id": {
+                    "type": "integer"
+                },
+                "expires_at": {
+                    "type": "integer"
+                }
+            }
+        },
         "models.DeleteCompletedEventResponse": {
             "type": "object",
             "properties": {
@@ -1264,11 +1430,11 @@ const docTemplate = `{
         "models.DeleteUserResponse": {
             "type": "object",
             "properties": {
-                "email": {
-                    "type": "string"
-                },
                 "successful": {
                     "type": "boolean"
+                },
+                "user_id": {
+                    "type": "integer"
                 }
             }
         },

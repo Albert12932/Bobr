@@ -284,3 +284,21 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, userId int64, hash 
 	)
 	return err
 }
+
+func (r *UserRepository) GetSuggests(ctx context.Context) ([]models.Event, error) {
+	var suggests []models.Event
+
+	err := pgxscan.Select(ctx, r.db, &suggests, `WITH deleted AS (
+    DELETE FROM suggest_events
+        WHERE expires_at < NOW()
+        RETURNING event_id
+	)
+	SELECT e.*
+	FROM events e
+	WHERE e.id IN (SELECT event_id FROM suggest_events WHERE event_id NOT IN (SELECT event_id FROM deleted));`)
+	if err != nil {
+		return suggests, err
+	}
+
+	return suggests, nil
+}

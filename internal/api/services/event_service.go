@@ -5,7 +5,9 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
+	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -69,4 +71,26 @@ func (s *EventService) GetEvents(ctx context.Context) ([]models.Event, error) {
 // UpdateEvent обновляет событие.
 func (s *EventService) UpdateEvent(ctx context.Context, req models.UpdateEventRequest) error {
 	return s.events.UpdateEvent(ctx, req)
+}
+
+func (s *EventService) SuggestEvent(ctx context.Context, eventId, expiresAtHours int64) error {
+	tag, err := s.events.CreateSuggest(ctx, eventId, time.Now().Add(time.Hour*time.Duration(expiresAtHours)))
+	if err != nil {
+		return err
+	}
+	if tag.RowsAffected() == 0 {
+		return ErrNoRowsAffected
+	}
+	return nil
+}
+
+func (s *EventService) DeleteSuggestion(ctx context.Context, eventId int64) error {
+	_, err := s.events.DeleteSuggest(ctx, eventId)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return ErrNoRowsAffected
+		}
+		return err
+	}
+	return nil
 }

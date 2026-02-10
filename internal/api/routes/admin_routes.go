@@ -43,6 +43,8 @@ func AdminRoutes(r *gin.Engine, db *pgxpool.Pool, accessJWTMaker *helpers.JWTMak
 	adminHandlersGroup.POST("/create_event", events.CreateEvent(eventService))
 	adminHandlersGroup.PATCH("/update_event", events.UpdateEvent(eventService))
 	adminHandlersGroup.DELETE("/delete_event/:id", events.DeleteEvent(eventService))
+	adminHandlersGroup.POST("/create_suggest", events.CreateSuggest(eventService))
+	adminHandlersGroup.DELETE("/delete_suggestion/:id", events.DeleteSuggestion(eventService))
 
 	// completed events
 	adminHandlersGroup.POST("/add_completed_event", events.AddCompletedEvent(completedEventService))

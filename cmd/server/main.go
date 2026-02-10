@@ -49,5 +49,5 @@ func main() {
 	if err := engine.Run(":8080"); err != nil {
 		log.Fatalf("Error while starting server: %v", err)
 	}
-
+	// TODO graceful shutdown
 }

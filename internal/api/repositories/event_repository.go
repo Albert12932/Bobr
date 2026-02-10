@@ -3,6 +3,7 @@ package repositories
 import (
 	"bobri/internal/models"
 	"context"
+	"time"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
@@ -133,4 +134,18 @@ func (r *EventRepository) UpdateEvent(ctx context.Context, req models.UpdateEven
 
 	_, err = r.db.Exec(ctx, query, args...)
 	return err
+}
+
+func (r *EventRepository) CreateSuggest(ctx context.Context, eventId int64, expiresAt time.Time) (pgconn.CommandTag, error) {
+
+	tag, err := r.db.Exec(ctx, `INSERT INTO suggest_events (event_id, expires_at) values ($1, $2)`, eventId, expiresAt)
+	return tag, err
+}
+
+func (r *EventRepository) DeleteSuggest(ctx context.Context, eventId int64) (pgconn.CommandTag, error) {
+	tag, err := r.db.Exec(ctx, `DELETE FROM suggest_events WHERE event_id = $1`, eventId)
+	if err != nil {
+		return tag, err
+	}
+	return tag, err
 }

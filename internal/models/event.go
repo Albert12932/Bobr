@@ -78,3 +78,8 @@ type CompletedEventsFullResponse struct {
 	Events []UserCompletedEvent `json:"events"`
 	Stats  CompletedEventsStats `json:"stats"`
 }
+
+type CreateSuggestRequest struct {
+	EventId        int64 `json:"event_id" binding:"required"`
+	ExpiresAtHours int64 `json:"expires_at"`
+}
