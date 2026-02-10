@@ -15,6 +15,7 @@ type EventRepository struct {
 	db DBTX
 }
 
+// NewEventRepository инициализирует репозиторий событий с переданным подключением (пулом или транзакцией).
 func NewEventRepository(db DBTX) *EventRepository {
 	return &EventRepository{db: db}
 }

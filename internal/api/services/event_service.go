@@ -5,6 +5,7 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
+
 	"github.com/jackc/pgx/v5/pgconn"
 )
 

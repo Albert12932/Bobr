@@ -6,6 +6,7 @@ import (
 	"bobri/internal/api/services"
 	"bobri/internal/middleware"
 	"bobri/pkg/helpers"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )

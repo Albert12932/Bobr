@@ -7,6 +7,7 @@ import (
 	"bobri/internal/api/services"
 	"bobri/internal/middleware"
 	"bobri/pkg/helpers"
+
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -31,7 +32,8 @@ func AdminRoutes(r *gin.Engine, db *pgxpool.Pool, accessJWTMaker *helpers.JWTMak
 	studentService := services.NewStudentsService(studentRepo, uow)
 
 	// users
-	adminHandlersGroup.DELETE("/delete_user/:email", users.DeleteUser(userService))
+	adminHandlersGroup.DELETE("/delete_user/:user_id", users.DeleteUser(userService))
+
 	adminHandlersGroup.GET("/students", users.GetStudents(studentService))
 	adminHandlersGroup.GET("/users", users.GetUsers(userService))
 	adminHandlersGroup.PATCH("/update_user", users.UpdateUser(userService))

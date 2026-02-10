@@ -4,8 +4,9 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5/pgconn"
 	"time"
+
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"

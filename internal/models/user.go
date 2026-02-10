@@ -49,8 +49,8 @@ type DeleteUserRequest struct {
 	Email string `json:"email"`
 }
 type DeleteUserResponse struct {
-	Successful bool   `json:"successful"`
-	Email      string `json:"email"`
+	Successful bool  `json:"successful"`
+	UserId     int64 `json:"user_id"`
 }
 
 type UserUpdateData struct {

@@ -57,7 +57,7 @@ func (e *EmailProvider) SendResetPassword(email, rawToken string) error {
 	// адрес Gmail SMTP
 	smtpAddr := "smtp.gmail.com:587"
 
-	// сетевой диалер с таймаутом
+	// сетевой диалер с тайм-аутом
 	dialer := &net.Dialer{
 		Timeout: 5 * time.Second,
 	}
@@ -76,7 +76,12 @@ func (e *EmailProvider) SendResetPassword(email, rawToken string) error {
 	if err != nil {
 		return fmt.Errorf("smtp client error: %w", err)
 	}
-	defer client.Close()
+	defer func(client *smtp.Client) {
+		err := client.Close()
+		if err != nil {
+
+		}
+	}(client)
 
 	// STARTTLS
 	if ok, _ := client.Extension("STARTTLS"); ok {

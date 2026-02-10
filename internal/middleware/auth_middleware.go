@@ -4,9 +4,10 @@ import (
 	"bobri/internal/models"
 	"bobri/pkg/helpers"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"strings"
+
+	"github.com/gin-gonic/gin"
 )
 
 func AuthenticationMiddleware(accessJwtMaker *helpers.JWTMaker, roleLevelRequired int64) gin.HandlerFunc {

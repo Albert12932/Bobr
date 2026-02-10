@@ -4,8 +4,8 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
-	sq "github.com/Masterminds/squirrel"
 
+	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
 	"github.com/jackc/pgx/v5"
 )
@@ -103,18 +103,16 @@ func (r *UserRepository) CheckUserWithEmailExists(ctx context.Context, email str
 	return exists, err
 }
 
-// DeleteUserByEmail удаляет пользователя по email и возвращает количество удаленных строк.
-func (r *UserRepository) DeleteUserByEmail(ctx context.Context, email string) (int64, error) {
+// DeleteUser удаляет пользователя по email/userId и возвращает количество удаленных строк.
+func (r *UserRepository) DeleteUser(ctx context.Context, userId int64) (int64, error) {
 	tag, err := r.db.Exec(ctx,
-		`DELETE FROM users WHERE email = $1`,
-		email,
-	)
-
+		`DELETE FROM users WHERE id = $1`,
+		userId)
 	if err != nil {
 		return 0, err
 	}
+	return tag.RowsAffected(), err
 
-	return tag.RowsAffected(), nil
 }
 
 // GetUsersWithMaxRole возвращает всех пользователей, у которых роль <= maxRole.

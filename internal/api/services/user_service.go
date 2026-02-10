@@ -17,8 +17,8 @@ func NewUserService(userRepo *repositories.UserRepository) *UserService {
 	}
 }
 
-func (s *UserService) DeleteUser(ctx context.Context, email string) error {
-	rows, err := s.userRepo.DeleteUserByEmail(ctx, email)
+func (s *UserService) DeleteUser(ctx context.Context, userId int64) error {
+	rows, err := s.userRepo.DeleteUser(ctx, userId)
 	if err != nil {
 		return err
 	}

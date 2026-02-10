@@ -4,8 +4,9 @@ import (
 	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
-	"github.com/gin-gonic/gin"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // GetStudents Получение списка студентов

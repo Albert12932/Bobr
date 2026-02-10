@@ -6,10 +6,11 @@ import (
 	"bobri/internal/config"
 	"bobri/internal/models"
 	"bobri/pkg/helpers"
-	"github.com/gin-gonic/gin"
 	"log"
 	"os"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
