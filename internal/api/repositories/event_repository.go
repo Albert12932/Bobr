@@ -3,22 +3,34 @@ package repositories
 import (
 	"bobri/internal/models"
 	"context"
+	"errors"
+	"fmt"
+	"time"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// EventRepository Репозиторий использует гибкий интерфейс DBTX.
+// Это позволяет одинаково работать с пулом и транзакцией.
 type EventRepository struct {
-	db *pgxpool.Pool
+	db DBTX
 }
 
-func NewEventRepository(db *pgxpool.Pool) *EventRepository {
+// NewEventRepository инициализирует репозиторий событий с переданным подключением (пулом или транзакцией).
+func NewEventRepository(db DBTX) *EventRepository {
 	return &EventRepository{db: db}
 }
 
-func (r *EventRepository) CreateEvent(ctx context.Context, data models.CreateEventRequest) (int64, error) {
+// WithDB Нужен для передачи транзакции в репозиторий
+func (r *EventRepository) WithDB(db DBTX) *EventRepository {
+	return &EventRepository{db: db}
+}
 
+// CreateEvent Создать событие
+func (r *EventRepository) CreateEvent(ctx context.Context, data models.CreateEventRequest) (int64, error) {
 	builder := sq.Insert("events")
 
 	columns := []string{"title"}
@@ -49,40 +61,65 @@ func (r *EventRepository) CreateEvent(ctx context.Context, data models.CreateEve
 
 	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("could not convert to sql query: %w", err)
 	}
 
 	var id int64
 	err = r.db.QueryRow(ctx, query, args...).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("could not create event: %w", err)
+	}
 
-	return id, err
+	return id, nil
 }
 
+// GetEventById Получить событие по id
 func (r *EventRepository) GetEventById(ctx context.Context, id int64) (models.CreateEventResponse, error) {
 	var result models.CreateEventResponse
+
 	err := pgxscan.Get(ctx, r.db, &result,
-		`SELECT id, title, description, event_type_code, points, icon_url, event_date, created_at
-         FROM events WHERE id = $1`, id)
-	return result, err
+		`SELECT id, title, description, event_type_code, points,
+		        icon_url, event_date, created_at
+         FROM events WHERE id = $1`,
+		id,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return result, fmt.Errorf("event not found: %w", err)
+		}
+		return result, fmt.Errorf("could not get event: %w", err)
+	}
+
+	return result, nil
 }
+
+// DeleteEvent Удалить событие
 func (r *EventRepository) DeleteEvent(ctx context.Context, eventId int64) (pgconn.CommandTag, error) {
-	return r.db.Exec(ctx,
+	tag, err := r.db.Exec(ctx,
 		`DELETE FROM events WHERE id = $1`,
 		eventId,
 	)
+	if err != nil || tag.RowsAffected() == 0 {
+		return pgconn.CommandTag{}, fmt.Errorf("could not delete event: %w", err)
+	}
+	return tag, nil
 }
 
-func (r *EventRepository) GetEvents(ctx context.Context) ([]models.Event, error) {
+// GetEvents Получить список всех событий
+func (r *EventRepository) GetEvents(ctx context.Context, limit int) ([]models.Event, error) {
 	var events []models.Event
 
 	err := pgxscan.Select(ctx, r.db, &events,
 		`SELECT id, title, description, event_type_code, points,
 		        icon_url, event_date, created_at
-		 FROM events`)
-
-	return events, err
+		 FROM events limit $1`, limit)
+	if err != nil {
+		return nil, fmt.Errorf("could not found events: %w", err)
+	}
+	return events, nil
 }
 
+// UpdateEvent Обновить данные события
 func (r *EventRepository) UpdateEvent(ctx context.Context, req models.UpdateEventRequest) error {
 	builder := sq.Update("events")
 
@@ -107,11 +144,31 @@ func (r *EventRepository) UpdateEvent(ctx context.Context, req models.UpdateEven
 
 	builder = builder.Where(sq.Eq{"id": req.EventId})
 
-	sqlQuery, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
-		return err
+		return fmt.Errorf("could not convert to sql query: %w", err)
 	}
 
-	_, err = r.db.Exec(ctx, sqlQuery, args...)
-	return err
+	_, err = r.db.Exec(ctx, query, args...)
+	if err != nil {
+		return fmt.Errorf("could not update event: %w", err)
+	}
+	return nil
+}
+
+func (r *EventRepository) CreateSuggest(ctx context.Context, eventId int64, expiresAt time.Time) (pgconn.CommandTag, error) {
+
+	tag, err := r.db.Exec(ctx, `INSERT INTO suggest_events (event_id, expires_at) values ($1, $2)`, eventId, expiresAt)
+	if err != nil || tag.RowsAffected() == 0 {
+		return pgconn.CommandTag{}, fmt.Errorf("could not create suggest event: %w", err)
+	}
+	return tag, nil
+}
+
+func (r *EventRepository) DeleteSuggest(ctx context.Context, eventId int64) (pgconn.CommandTag, error) {
+	tag, err := r.db.Exec(ctx, `DELETE FROM suggest_events WHERE event_id = $1`, eventId)
+	if err != nil || tag.RowsAffected() == 0 {
+		return pgconn.CommandTag{}, fmt.Errorf("could not delete suggest event: %w", err)
+	}
+	return tag, nil
 }

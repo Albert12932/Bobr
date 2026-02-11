@@ -5,8 +5,9 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // CreateEvent  Создание нового события
@@ -15,7 +16,7 @@ import (
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}"
+// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}" default(Bearer )
 // @Param        input          body     models.CreateEventRequest  true  "Данные нового события"
 // @Success      200  {object}  models.CreateEventResponse  "Событие успешно создано"
 // @Failure      400  {object}  models.ErrorResponse        "Некорректный JSON или ошибка валидации"

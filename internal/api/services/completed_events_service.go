@@ -5,7 +5,6 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 var (
@@ -16,32 +15,32 @@ var (
 
 type CompletedEventsService struct {
 	repo *repositories.CompletedEventsRepository
-	db   *pgxpool.Pool
+	uow  *repositories.UoW
 }
 
-func NewCompletedEventsService(repo *repositories.CompletedEventsRepository, db *pgxpool.Pool) *CompletedEventsService {
-	return &CompletedEventsService{repo: repo, db: db}
+// NewCompletedEventsService создает сервис выполненных событий.
+func NewCompletedEventsService(repo *repositories.CompletedEventsRepository, uow *repositories.UoW) *CompletedEventsService {
+	return &CompletedEventsService{
+		repo: repo,
+		uow:  uow,
+	}
 }
 
+// AddCompletedEvent добавляет выполненное событие пользователю.
 func (s *CompletedEventsService) AddCompletedEvent(ctx context.Context, userId, eventId int64) error {
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return err
-	}
+	return s.uow.WithinTransaction(ctx, func(ctx context.Context, tx repositories.DBTX) error {
+		// вызываем репозиторий через WithDB(tx)
 
-	defer func() {
-		_ = tx.Rollback(ctx)
-	}()
-
-	err = s.repo.AddCompletedEventTx(ctx, tx, userId, eventId)
-	if err != nil {
-		return err
-	}
-
-	return tx.Commit(ctx)
+		err := s.repo.WithDB(tx).AddCompletedEvent(ctx, userId, eventId)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }
-func (s *CompletedEventsService) DeleteCompletedEvent(ctx context.Context, userId, eventId int64) error {
 
+// DeleteCompletedEvent удаляет отметку о выполнении события.
+func (s *CompletedEventsService) DeleteCompletedEvent(ctx context.Context, userId, eventId int64) error {
 	tag, err := s.repo.DeleteCompletedEvent(ctx, userId, eventId)
 	if err != nil {
 		return err
@@ -53,9 +52,13 @@ func (s *CompletedEventsService) DeleteCompletedEvent(ctx context.Context, userI
 
 	return nil
 }
-func (s *CompletedEventsService) GetAllCompletedEvents(ctx context.Context) ([]models.CompletedEvent, error) {
-	return s.repo.GetAllCompletedEvents(ctx)
+
+// GetAllCompletedEvents возвращает список всех выполненных событий.
+func (s *CompletedEventsService) GetAllCompletedEvents(ctx context.Context, limit int) ([]models.CompletedEvent, error) {
+	return s.repo.GetAllCompletedEvents(ctx, limit)
 }
+
+// GetCompletedEvents возвращает выполненные события пользователя с агрегированной статистикой.
 func (s *CompletedEventsService) GetCompletedEvents(ctx context.Context, userId int64) (models.CompletedEventsFullResponse, error) {
 	return s.repo.GetCompletedEventsWithStats(ctx, userId)
 }

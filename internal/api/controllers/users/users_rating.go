@@ -4,9 +4,10 @@ import (
 	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
-	"github.com/gin-gonic/gin"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // GetLeaderboard Получить топ пользователей по количеству очков

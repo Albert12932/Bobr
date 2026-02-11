@@ -3,13 +3,10 @@ package services
 import (
 	"bobri/internal/api/repositories"
 	"bobri/internal/models"
-	"bobri/pkg/helpers"
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgxpool"
+
 	"golang.org/x/crypto/bcrypt"
-	"log"
 )
 
 var (
@@ -18,68 +15,60 @@ var (
 )
 
 type LoginService struct {
-	refreshTokensRepo *repositories.RefreshTokensRepository
-	userRepo          *repositories.UserRepository
-	tokenProvider     *TokenProvider
-	jwtMaker          *helpers.JWTMaker
-	db                *pgxpool.Pool
+	userRepo      *repositories.UserRepository
+	tokenProvider *TokenProvider
+	uow           *repositories.UoW
 }
 
-func NewLoginService(tokenProvider *TokenProvider, userRepo *repositories.UserRepository, db *pgxpool.Pool) *LoginService {
+func NewLoginService(
+	userRepo *repositories.UserRepository,
+	tokenProvider *TokenProvider,
+	uow *repositories.UoW,
+) *LoginService {
 	return &LoginService{
 		userRepo:      userRepo,
 		tokenProvider: tokenProvider,
-		db:            db,
+		uow:           uow,
 	}
 }
 
 func (s *LoginService) Login(ctx context.Context, email string, password string) (models.LoginResponse, error) {
-
 	user, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return models.LoginResponse{}, ErrUserNotFound
-		}
-		return models.LoginResponse{}, err
+		return models.LoginResponse{}, ErrUserNotFound
 	}
 
 	if err = bcrypt.CompareHashAndPassword(user.Password, []byte(password)); err != nil {
 		return models.LoginResponse{}, ErrInvalidPassword
 	}
 
-	tx, err := s.db.Begin(ctx)
-	if err != nil {
-		return models.LoginResponse{}, err
-	}
+	var result models.LoginResponse
 
-	defer func() {
-		if er := tx.Rollback(ctx); er != nil && !errors.Is(er, pgx.ErrTxClosed) {
-			log.Println("rollback failed:", er)
+	err = s.uow.WithinTransaction(ctx, func(ctx context.Context, tx repositories.DBTX) error {
+		// генерируем и сохраняем токены
+		tokens, err := s.tokenProvider.IssuePair(ctx, tx, user.Id, user.RoleLevel)
+		if err != nil {
+			return err
 		}
-	}()
 
-	tokens, err := s.tokenProvider.IssuePairTx(ctx, tx, user.Id, user.RoleLevel)
-	if err != nil {
-		return models.LoginResponse{}, err
-	}
+		result = models.LoginResponse{
+			AuthTokens: models.AuthTokens{
+				AccessToken:  tokens.AccessToken,
+				RefreshToken: tokens.RefreshToken,
+				ExpUnix:      tokens.ExpUnix,
+			},
+			UserSubstructure: models.UserSubstructure{
+				ID:           user.Id,
+				Email:        user.Email,
+				BookId:       user.BookId,
+				FirstName:    user.Name,
+				RoleLevel:    user.RoleLevel,
+				StudentGroup: user.StudentGroup,
+			},
+		}
 
-	if err := tx.Commit(ctx); err != nil {
-		return models.LoginResponse{}, err
-	}
+		return nil
+	})
 
-	return models.LoginResponse{
-		AuthTokens: models.AuthTokens{
-			AccessToken:  tokens.AccessToken,
-			RefreshToken: tokens.RefreshToken,
-			ExpUnix:      tokens.ExpUnix,
-		},
-		UserSubstructure: models.UserSubstructure{
-			ID:           user.Id,
-			Email:        user.Email,
-			BookId:       user.BookId,
-			FirstName:    user.Name,
-			RoleLevel:    user.RoleLevel,
-			StudentGroup: user.StudentGroup,
-		},
-	}, nil
+	return result, err
 }

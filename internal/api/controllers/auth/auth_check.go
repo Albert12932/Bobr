@@ -5,9 +5,10 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // CheckStudent Проверка студенческого в системе
@@ -27,11 +28,10 @@ import (
 // @Router       /auth/check [post]
 func CheckStudent(service *services.StudentsService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
-		var AuthCheck models.AuthBookRequest
+		var body models.AuthBookRequest
 
 		// Берем номер студенческого из тела запроса
-		if err := c.ShouldBindJSON(&AuthCheck); err != nil {
+		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
 					Error:   err.Error(),
@@ -41,10 +41,11 @@ func CheckStudent(service *services.StudentsService) gin.HandlerFunc {
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-
 		defer cancel()
 
-		resp, err := service.CheckStudent(ctx, AuthCheck.BookId)
+		resp, err := service.CheckStudent(ctx, body.BookId)
+
+		// Обработка ошибок
 		if err != nil {
 			switch {
 			case errors.Is(err, services.ErrStudentByBookIdNotFound):

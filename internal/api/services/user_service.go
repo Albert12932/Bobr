@@ -5,7 +5,6 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
-	sq "github.com/Masterminds/squirrel"
 )
 
 type UserService struct {
@@ -18,8 +17,8 @@ func NewUserService(userRepo *repositories.UserRepository) *UserService {
 	}
 }
 
-func (s *UserService) DeleteUser(ctx context.Context, email string) error {
-	rows, err := s.userRepo.DeleteUserByEmail(ctx, email)
+func (s *UserService) DeleteUser(ctx context.Context, userId int64) error {
+	rows, err := s.userRepo.DeleteUser(ctx, userId)
 	if err != nil {
 		return err
 	}
@@ -30,15 +29,17 @@ func (s *UserService) DeleteUser(ctx context.Context, email string) error {
 
 	return nil
 }
-func (s *UserService) GetUsers(ctx context.Context, maxRole int64) ([]models.User, error) {
-	return s.userRepo.GetUsersWithMaxRole(ctx, maxRole)
+
+func (s *UserService) GetUsers(ctx context.Context, maxRole int64, limit int) ([]models.User, error) {
+	return s.userRepo.GetUsersWithMaxRole(ctx, maxRole, limit)
 }
+
 func (s *UserService) GetProfile(ctx context.Context, userID int64) (models.ProfileResponse, error) {
 	return s.userRepo.GetProfileByUserID(ctx, userID)
 }
-func (s *UserService) UpdateUser(ctx context.Context, adminRole int64, req models.UpdateUserRequest) (models.UpdateUserResponse, error) {
 
-	// Проверяем роль
+func (s *UserService) UpdateUser(ctx context.Context, adminRole int64, req models.UpdateUserRequest) (models.UpdateUserResponse, error) {
+	// проверяем существование роли
 	if req.NewData.RoleLevel != 0 {
 		exists, err := s.userRepo.RoleExists(ctx, req.NewData.RoleLevel)
 		if err != nil {
@@ -49,67 +50,34 @@ func (s *UserService) UpdateUser(ctx context.Context, adminRole int64, req model
 		}
 	}
 
-	// Получаем текущую роль и book_id
+	// получаем текущую роль
 	curRole, _, err := s.userRepo.GetUserRoleAndBookId(ctx, req.UserId)
 	if err != nil {
 		return models.UpdateUserResponse{}, err
 	}
 
-	// Проверяем полномочия
+	// проверяем полномочия
 	if req.NewData.RoleLevel >= adminRole || curRole >= adminRole {
 		return models.UpdateUserResponse{}, errors.New("недостаточно прав")
 	}
 
-	// Строим SQL через Squirrel
-	builder := sq.Update("users")
-
-	if req.NewData.BookId != 0 {
-		builder = builder.Set("book_id", req.NewData.BookId)
-	}
-	if req.NewData.Name != "" {
-		builder = builder.Set("name", req.NewData.Name)
-	}
-	if req.NewData.Surname != "" {
-		builder = builder.Set("surname", req.NewData.Surname)
-	}
-	if req.NewData.MiddleName != "" {
-		builder = builder.Set("middle_name", req.NewData.MiddleName)
-	}
-	if req.NewData.StudentGroup != "" {
-		builder = builder.Set("student_group", req.NewData.StudentGroup)
-	}
-	if req.NewData.Email != "" {
-		builder = builder.Set("email", req.NewData.Email)
-	}
-	if req.NewData.RoleLevel != 0 {
-		builder = builder.Set("role_level", req.NewData.RoleLevel)
-	}
-
-	builder = builder.Where(sq.Eq{"id": req.UserId})
-
-	sqlQuery, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
+	// выполняем обновление через репозиторий
+	rows, err := s.userRepo.UpdateUser(ctx, req)
 	if err != nil {
 		return models.UpdateUserResponse{}, err
 	}
 
-	rows, err := s.userRepo.UpdateUser(ctx, sqlQuery, args)
-	if err != nil {
-		return models.UpdateUserResponse{}, err
-	}
 	if rows != 1 {
 		return models.UpdateUserResponse{}, errors.New("RowsAffected != 1")
 	}
 
-	var resp models.UpdateUserResponse
-	resp.Successful = true
-	resp.UserID = req.UserId
-	resp.New = req.NewData
-
-	return resp, nil
+	return models.UpdateUserResponse{
+		Successful: true,
+		UserID:     req.UserId,
+		New:        req.NewData,
+	}, nil
 }
 
-// GetLeaderboard возвращает топ пользователей по количеству очков.
-// limit – сколько записей вернуть (если некорректный, подрежем до разумных границ).
 func (s *UserService) GetLeaderboard(ctx context.Context, limit int) ([]models.UserWithPoints, error) {
 	if limit <= 0 {
 		limit = 50
@@ -119,4 +87,8 @@ func (s *UserService) GetLeaderboard(ctx context.Context, limit int) ([]models.U
 	}
 
 	return s.userRepo.GetLeaderboard(ctx, limit)
+}
+
+func (s *UserService) GetSuggestions(ctx context.Context) ([]models.Event, error) {
+	return s.userRepo.GetSuggests(ctx)
 }

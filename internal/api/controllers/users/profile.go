@@ -4,9 +4,10 @@ import (
 	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // GetProfile Получение профиля пользователя

@@ -98,6 +98,15 @@ definitions:
       title:
         type: string
     type: object
+  models.CreateSuggestRequest:
+    properties:
+      event_id:
+        type: integer
+      expires_at:
+        type: integer
+    required:
+    - event_id
+    type: object
   models.DeleteCompletedEventResponse:
     properties:
       event_id:
@@ -116,10 +125,10 @@ definitions:
     type: object
   models.DeleteUserResponse:
     properties:
-      email:
-        type: string
       successful:
         type: boolean
+      user_id:
+        type: integer
     type: object
   models.ErrorResponse:
     properties:
@@ -321,8 +330,22 @@ definitions:
     properties:
       completed_at:
         type: string
+      created:
+        type: string
+      description:
+        type: string
+      event_date:
+        type: string
       event_id:
         type: integer
+      event_type_code:
+        type: integer
+      icon_url:
+        type: string
+      points:
+        type: integer
+      title:
+        type: string
     type: object
   models.UserSubstructure:
     properties:
@@ -379,7 +402,8 @@ paths:
       description: Добавляет запись о выполнении события конкретным пользователем.
         Требует прав администратора.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -423,11 +447,17 @@ paths:
       description: Возвращает полный список выполненных событий всех пользователей
         системы.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
         type: string
+      - default: 50
+        description: Максимальное количество мероприятий в выдаче
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -456,7 +486,8 @@ paths:
         о созданной записи. Требует авторизации администратора. Поля помимо title
         могут не указываться, тогда они будут заменены на стандартные значения
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -489,6 +520,43 @@ paths:
       summary: Создать событие
       tags:
       - admin
+  /admin/create_suggest:
+    post:
+      consumes:
+      - application/json
+      description: Создаёт рекомендацию для события с указанием времени истечения
+        в часах с момента создания. Возвращает ID события. Требует авторизации пользователя.
+      parameters:
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Данные для создания рекомендации
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateSuggestRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ID события, для которого была создана рекомендация
+          schema:
+            type: string
+        "400":
+          description: Некорректный JSON
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка сервера при создании рекомендации
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Создать рекомендацию для события
+      tags:
+      - admin
   /admin/delete_completed_event/{user_id}/{event_id}:
     delete:
       consumes:
@@ -496,7 +564,8 @@ paths:
       description: Удаляет отметку о выполнении события конкретным пользователем.
         Требует прав администратора.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -543,7 +612,8 @@ paths:
       - application/json
       description: Удаляет событие по его идентификатору. Требует прав администратора.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -579,18 +649,60 @@ paths:
       summary: Удалить событие
       tags:
       - admin
-  /admin/delete_user/{email}:
+  /admin/delete_suggestion/{id}:
     delete:
       consumes:
       - application/json
-      description: Удаляет пользователя по его email. Требует прав администратора.
+      description: Удаляет рекомендацию по заданному ID. Если рекомендация не найдена,
+        возвращает ошибку 404. В случае других ошибок возвращается ошибка 500.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
         type: string
-      - description: Email удаляемого пользователя
+      - description: ID рекомендации для удаления
+        format: int64
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Рекомендация успешно удалена
+          schema:
+            $ref: '#/definitions/models.DeleteEventResponse'
+        "400":
+          description: Некорректный формат ID рекомендации
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Рекомендация с таким ID не найдено
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Ошибка при удалении рекомендации
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Удалить рекомендацию по ID
+      tags:
+      - admin
+  /admin/delete_user/{user_id}:
+    delete:
+      consumes:
+      - application/json
+      description: Удаляет пользователя по его user_id. Требует прав администратора.
+      parameters:
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: UserId удаляемого пользователя
         in: path
         name: email
         required: true
@@ -603,7 +715,7 @@ paths:
           schema:
             $ref: '#/definitions/models.DeleteUserResponse'
         "400":
-          description: Передан пустой email
+          description: Передан пустой id пользователя
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "401":
@@ -611,7 +723,7 @@ paths:
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "404":
-          description: Пользователь с таким email не найден
+          description: Пользователь с таким user_id не найден
           schema:
             $ref: '#/definitions/models.ErrorResponse'
         "500":
@@ -627,11 +739,17 @@ paths:
       - application/json
       description: Возвращает полный список событий из базы данных.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
         type: string
+      - default: 50
+        description: Максимальное количество мероприятий в выдаче
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -658,6 +776,11 @@ paths:
         name: Authorization
         required: true
         type: string
+      - default: 50
+        description: Максимальное количество студентов в выдаче
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -684,7 +807,8 @@ paths:
         Производит частичное обновление данных события по его ID.
         Обновляются только те поля, которые переданы в теле запроса.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -769,6 +893,11 @@ paths:
         name: Authorization
         required: true
         type: string
+      - default: 50
+        description: Максимальное количество пользователей в выдаче
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -1009,6 +1138,35 @@ paths:
       summary: Установка нового пароля
       tags:
       - auth
+  /get_suggests:
+    get:
+      consumes:
+      - application/json
+      description: Возвращает список рекомендаций для событий. Если произошла ошибка
+        при получении данных, возвращается код ошибки 500.
+      parameters:
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Список рекомендаций событий
+          schema:
+            items:
+              $ref: '#/definitions/models.Event'
+            type: array
+        "500":
+          description: Ошибка при получении рекомендаций
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Получить список рекомендаций для событий
+      tags:
+      - user
   /leaderboard:
     get:
       description: Возвращает список пользователей, отсортированный по количеству
@@ -1046,7 +1204,8 @@ paths:
         - Олимпиады (type = 3)
         - Проекты (type = 4)
       parameters:
-      - description: 'Bearer токен в формате: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен в формате: Bearer {token}'
         in: header
         name: Authorization
         required: true

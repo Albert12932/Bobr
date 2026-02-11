@@ -6,7 +6,6 @@ import (
 	"bobri/internal/config"
 	"bobri/internal/models"
 	"bobri/pkg/helpers"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"log"
 	"os"
@@ -38,12 +37,6 @@ func main() {
 
 	// Создаем движок gin для работы с HTTP и регистрируем роутеры
 	engine := gin.Default()
-
-	engine.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
-		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
-	}))
 
 	routes.AuthRoutes(engine, db, AccessJwtMaker, models.EmailAuth{
 		EmailFrom: fromEmail,

@@ -90,6 +90,11 @@ CREATE TABLE IF NOT EXISTS completed_events (
     completed_at timestamptz default now(),
     PRIMARY KEY (user_id, event_id)
 );
+CREATE TABLE IF NOT EXISTS suggest_events (
+    event_id int references events(id) on DELETE CASCADE,
+    created_at timestamptz not null default now(),
+    expires_at timestamptz not null DEFAULT now() + INTERVAL '7 days'
+);
 CREATE TABLE IF NOT EXISTS user_points (
     user_id int primary key,
     total_points int not null default 0,

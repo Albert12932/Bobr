@@ -4,17 +4,24 @@ import "time"
 
 type Event struct {
 	EventID       int64     `json:"event_id" db:"id"`
-	Title         string    `json:"title"`
-	Description   string    `json:"description"`
-	EventTypeCode int       `json:"event_type_code"`
-	Points        int       `json:"points"`
-	IconUrl       string    `json:"icon_url"`
-	EventDate     time.Time `json:"event_date"`
-	CreatedAt     time.Time `json:"created"`
+	Title         string    `json:"title" db:"title"`
+	Description   string    `json:"description" db:"description"`
+	EventTypeCode int       `json:"event_type_code" db:"event_type_code"`
+	Points        int       `json:"points" db:"points"`
+	IconUrl       string    `json:"icon_url" db:"icon_url"`
+	EventDate     time.Time `json:"event_date" db:"event_date"`
+	CreatedAt     time.Time `json:"created" db:"created_at"`
 }
 type UserCompletedEvent struct {
-	EventID   int64     `json:"event_id" db:"event_id"`
-	Completed time.Time `json:"completed_at" db:"completed_at"`
+	EventID       int64     `json:"event_id" db:"id"`
+	Title         string    `json:"title" db:"title"`
+	Description   string    `json:"description" db:"description"`
+	EventTypeCode int       `json:"event_type_code" db:"event_type_code"`
+	Points        int       `json:"points" db:"points"`
+	IconUrl       string    `json:"icon_url" db:"icon_url"`
+	EventDate     time.Time `json:"event_date" db:"event_date"`
+	CreatedAt     time.Time `json:"created" db:"created_at"`
+	Completed     time.Time `json:"completed_at" db:"completed_at"`
 }
 type CompletedEvent struct {
 	UserId      int64     `json:"user_id"`
@@ -77,4 +84,9 @@ type CompletedEventsStats struct {
 type CompletedEventsFullResponse struct {
 	Events []UserCompletedEvent `json:"events"`
 	Stats  CompletedEventsStats `json:"stats"`
+}
+
+type CreateSuggestRequest struct {
+	EventId        int64 `json:"event_id" binding:"required"`
+	ExpiresAtHours int64 `json:"expires_at"`
 }
