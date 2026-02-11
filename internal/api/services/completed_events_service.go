@@ -30,7 +30,12 @@ func NewCompletedEventsService(repo *repositories.CompletedEventsRepository, uow
 func (s *CompletedEventsService) AddCompletedEvent(ctx context.Context, userId, eventId int64) error {
 	return s.uow.WithinTransaction(ctx, func(ctx context.Context, tx repositories.DBTX) error {
 		// вызываем репозиторий через WithDB(tx)
-		return s.repo.WithDB(tx).AddCompletedEvent(ctx, userId, eventId)
+
+		err := s.repo.WithDB(tx).AddCompletedEvent(ctx, userId, eventId)
+		if err != nil {
+			return err
+		}
+		return nil
 	})
 }
 
@@ -49,8 +54,8 @@ func (s *CompletedEventsService) DeleteCompletedEvent(ctx context.Context, userI
 }
 
 // GetAllCompletedEvents возвращает список всех выполненных событий.
-func (s *CompletedEventsService) GetAllCompletedEvents(ctx context.Context) ([]models.CompletedEvent, error) {
-	return s.repo.GetAllCompletedEvents(ctx)
+func (s *CompletedEventsService) GetAllCompletedEvents(ctx context.Context, limit int) ([]models.CompletedEvent, error) {
+	return s.repo.GetAllCompletedEvents(ctx, limit)
 }
 
 // GetCompletedEvents возвращает выполненные события пользователя с агрегированной статистикой.

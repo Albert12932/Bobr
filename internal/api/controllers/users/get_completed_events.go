@@ -19,7 +19,7 @@ import (
 // @Tags         user
 // @Produce      json
 // @Security     BearerAuth
-// @Param        Authorization  header   string  true  "Bearer токен в формате: Bearer {token}"
+// @Param        Authorization  header   string  true  "Bearer токен в формате: Bearer {token}" default(Bearer )
 // @Success      200  {object}  models.CompletedEventsFullResponse
 // @Failure      500  {object}  models.ErrorResponse  "Ошибка при получении данных"
 // @Router       /me/completed_events [get]

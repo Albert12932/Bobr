@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -32,13 +33,16 @@ func (r *ResetPasswordRepository) GetUserIdByEmail(ctx context.Context, email st
 		`SELECT id FROM users WHERE email = $1`,
 		email,
 	).Scan(&userId)
+	if err != nil {
+		return 0, fmt.Errorf("could not get user id: %w", err)
+	}
 
 	return userId, err
 }
 
 // UpsertResetToken создает или обновляет токен сброса пароля.
 func (r *ResetPasswordRepository) UpsertResetToken(ctx context.Context, userId int64, email string, tokenHash []byte, expiresAt time.Time) error {
-	_, err := r.db.Exec(ctx,
+	tag, err := r.db.Exec(ctx,
 		`INSERT INTO reset_password_tokens (user_id, email, token_hash, expires_at, created_at)
          VALUES ($1, $2, $3, $4, NOW())
          ON CONFLICT (user_id)
@@ -50,8 +54,11 @@ func (r *ResetPasswordRepository) UpsertResetToken(ctx context.Context, userId i
 		tokenHash,
 		expiresAt,
 	)
+	if err != nil || tag.RowsAffected() == 0 {
+		return fmt.Errorf("could not create token: %w", err)
+	}
 
-	return err
+	return nil
 }
 
 // GetUserIdByResetToken возвращает user_id по хешу токена сброса, если токен еще не истек.
@@ -65,19 +72,22 @@ func (r *ResetPasswordRepository) GetUserIdByResetToken(ctx context.Context, tok
 		tokenHash,
 	).Scan(&userId)
 
-	if err != nil && errors.Is(err, pgx.ErrNoRows) {
-		return 0, nil
+	if err != nil || errors.Is(err, pgx.ErrNoRows) {
+		return 0, fmt.Errorf("could not get user id by reset token: %w", err)
 	}
 
-	return userId, err
+	return userId, nil
 }
 
 // DeleteResetToken удаляет токен сброса для пользователя.
 func (r *ResetPasswordRepository) DeleteResetToken(ctx context.Context, userId int64) error {
-	_, err := r.db.Exec(ctx,
+	tag, err := r.db.Exec(ctx,
 		`DELETE FROM reset_password_tokens WHERE user_id = $1`,
 		userId,
 	)
+	if err != nil || tag.RowsAffected() == 0 {
+		return fmt.Errorf("could not delete reset token: %w", err)
+	}
 
-	return err
+	return nil
 }

@@ -4,6 +4,7 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgconn"
@@ -45,8 +46,14 @@ func (r *StudentsRepository) GetStudentByBookId(ctx context.Context, bookId int6
 		&student.BirthDate,
 		&student.StudentGroup,
 	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return student, fmt.Errorf("could not get student: %w", err)
+		}
+		return student, err
+	}
 
-	return student, err
+	return student, nil
 }
 
 // UserExistsByBookId проверяет, существует ли пользователь с указанным book_id.
@@ -57,8 +64,11 @@ func (r *StudentsRepository) UserExistsByBookId(ctx context.Context, bookId int6
 		`SELECT EXISTS(SELECT 1 FROM users WHERE book_id = $1)`,
 		bookId,
 	).Scan(&exists)
+	if err != nil {
+		return exists, fmt.Errorf("could not check user existence: %w", err)
+	}
 
-	return exists, err
+	return exists, nil
 }
 
 // UpsertLinkToken создает или обновляет токен привязки аккаунта к студенту.
@@ -74,6 +84,9 @@ func (r *StudentsRepository) UpsertLinkToken(ctx context.Context, bookId int64, 
 		token,
 		expiresAt,
 	)
+	if err != nil || tag.RowsAffected() == 0 {
+		return nil, fmt.Errorf("could not upsert link token: %w", err)
+	}
 
 	return &tag, err
 }
@@ -88,22 +101,23 @@ func (r *StudentsRepository) DeleteLinkToken(ctx context.Context, tokenHash []by
          RETURNING book_id`,
 		tokenHash,
 	).Scan(&bookId)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, nil
+	if err != nil {
+		return bookId, fmt.Errorf("could not delete link token: %w", err)
 	}
 
-	return bookId, err
+	return bookId, nil
 }
 
 // GetAllStudents возвращает полный список студентов.
-func (r *StudentsRepository) GetAllStudents(ctx context.Context) ([]models.Student, error) {
+func (r *StudentsRepository) GetAllStudents(ctx context.Context, limit int) ([]models.Student, error) {
 	var students []models.Student
 
 	err := pgxscan.Select(ctx, r.db, &students,
 		`SELECT id, book_id, surname, name, middle_name, birth_date, student_group
-         FROM students`,
-	)
+         FROM students limit $1`, limit)
+	if err != nil {
+		return students, fmt.Errorf("could not get students: %w", err)
+	}
 
-	return students, err
+	return students, nil
 }

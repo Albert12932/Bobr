@@ -17,7 +17,7 @@ import (
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}"
+// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}" default(Bearer )
 // @Param        id             path     int64   true  "ID рекомендации для удаления"
 // @Success      200  {object}  models.DeleteEventResponse  "Рекомендация успешно удалена"
 // @Failure      400  {object}  models.ErrorResponse        "Некорректный формат ID рекомендации"

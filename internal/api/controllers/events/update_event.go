@@ -4,8 +4,9 @@ import (
 	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
-	"github.com/gin-gonic/gin"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // UpdateEvent  Частичное обновление события
@@ -15,7 +16,7 @@ import (
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}"
+// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}" default(Bearer )
 // @Param        input          body     models.UpdateEventRequest  true  "ID события и новые значения полей"
 // @Success      200  {object}  models.SuccessResponse  "Событие успешно обновлено"
 // @Failure      400  {object}  models.ErrorResponse  "Некорректный JSON или ошибка валидации"

@@ -31,6 +31,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -96,10 +97,18 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Максимальное количество мероприятий в выдаче",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -143,6 +152,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -202,6 +212,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -255,6 +266,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -325,6 +337,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -388,6 +401,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -446,6 +460,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -509,10 +524,18 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Максимальное количество мероприятий в выдаче",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -557,6 +580,13 @@ const docTemplate = `{
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Максимальное количество студентов в выдаче",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -594,6 +624,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -720,6 +751,13 @@ const docTemplate = `{
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Максимальное количество пользователей в выдаче",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1084,6 +1122,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -1170,6 +1209,7 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен в формате: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -1746,8 +1786,29 @@ const docTemplate = `{
                 "completed_at": {
                     "type": "string"
                 },
+                "created": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
                 "event_id": {
                     "type": "integer"
+                },
+                "event_type_code": {
+                    "type": "integer"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

@@ -83,6 +83,6 @@ func (s *StudentsService) CheckStudent(ctx context.Context, bookId int64) (model
 	}, nil
 }
 
-func (s *StudentsService) GetStudents(ctx context.Context) ([]models.Student, error) {
-	return s.studentsRepo.GetAllStudents(ctx)
+func (s *StudentsService) GetStudents(ctx context.Context, limit int) ([]models.Student, error) {
+	return s.studentsRepo.GetAllStudents(ctx, limit)
 }

@@ -19,7 +19,7 @@ import (
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}"
+// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}" default(Bearer )
 // @Param        input          body     models.CreateSuggestRequest  true  "Данные для создания рекомендации"
 // @Success      200  {string}  string  "ID события, для которого была создана рекомендация"
 // @Failure      400  {object}  models.ErrorResponse  "Некорректный JSON"

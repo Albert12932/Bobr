@@ -30,8 +30,8 @@ func (s *UserService) DeleteUser(ctx context.Context, userId int64) error {
 	return nil
 }
 
-func (s *UserService) GetUsers(ctx context.Context, maxRole int64) ([]models.User, error) {
-	return s.userRepo.GetUsersWithMaxRole(ctx, maxRole)
+func (s *UserService) GetUsers(ctx context.Context, maxRole int64, limit int) ([]models.User, error) {
+	return s.userRepo.GetUsersWithMaxRole(ctx, maxRole, limit)
 }
 
 func (s *UserService) GetProfile(ctx context.Context, userID int64) (models.ProfileResponse, error) {

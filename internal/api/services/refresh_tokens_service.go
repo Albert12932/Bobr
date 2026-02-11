@@ -6,10 +6,11 @@ import (
 	"bobri/pkg/helpers"
 	"context"
 	"errors"
+	"fmt"
 )
 
 var (
-	ErrNoTokensFound = errors.New("no tokens found")
+	ErrNoTokensFound = errors.New("не удалось найти токен")
 )
 
 type RefreshTokensService struct {
@@ -34,7 +35,7 @@ func (s *RefreshTokensService) RefreshToken(ctx context.Context, refreshToken st
 	// проверяем токен
 	userId, err := s.refreshRepo.GetUserIdByRefreshToken(ctx, helpers.HashToken(refreshToken))
 	if err != nil {
-		return models.RefreshTokenResponse{}, err
+		return models.RefreshTokenResponse{}, fmt.Errorf("could not found user_id by refresh token: %w", err)
 	}
 	if userId == 0 {
 		return models.RefreshTokenResponse{}, ErrNoTokensFound

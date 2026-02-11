@@ -15,7 +15,7 @@ import (
 // @Tags         user
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}"
+// @Param        Authorization  header   string  true  "Bearer токен авторизации. Формат: Bearer {token}" default(Bearer )
 // @Success      200  {array}   models.Event  "Список рекомендаций событий"
 // @Failure      500  {object}  models.ErrorResponse  "Ошибка при получении рекомендаций"
 // @Router       /get_suggests [get]

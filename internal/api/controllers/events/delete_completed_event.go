@@ -5,9 +5,10 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // DeleteCompletedEvent  Удалить выполнение события пользователем
@@ -16,7 +17,7 @@ import (
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header  string  true  "Bearer токен авторизации. Формат: Bearer {token}"
+// @Param        Authorization  header  string  true  "Bearer токен авторизации. Формат: Bearer {token}" default(Bearer )
 // @Param        user_id        path    int     true  "ID пользователя"
 // @Param        event_id       path    int     true  "ID события"
 // @Success      200  {object}  models.DeleteCompletedEventResponse        "Отметка о выполнении успешно удалена"

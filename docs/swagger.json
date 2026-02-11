@@ -20,6 +20,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -85,10 +86,18 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Максимальное количество мероприятий в выдаче",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -132,6 +141,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -191,6 +201,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -244,6 +255,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -314,6 +326,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -377,6 +390,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -435,6 +449,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -498,10 +513,18 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Максимальное количество мероприятий в выдаче",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -546,6 +569,13 @@
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Максимальное количество студентов в выдаче",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -583,6 +613,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -709,6 +740,13 @@
                         "name": "Authorization",
                         "in": "header",
                         "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "default": 50,
+                        "description": "Максимальное количество пользователей в выдаче",
+                        "name": "limit",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -1073,6 +1111,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен авторизации. Формат: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -1159,6 +1198,7 @@
                 "parameters": [
                     {
                         "type": "string",
+                        "default": "Bearer",
                         "description": "Bearer токен в формате: Bearer {token}",
                         "name": "Authorization",
                         "in": "header",
@@ -1735,8 +1775,29 @@
                 "completed_at": {
                     "type": "string"
                 },
+                "created": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "event_date": {
+                    "type": "string"
+                },
                 "event_id": {
                     "type": "integer"
+                },
+                "event_type_code": {
+                    "type": "integer"
+                },
+                "icon_url": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
                 }
             }
         },

@@ -64,8 +64,8 @@ func (s *EventService) DeleteEvent(ctx context.Context, eventId int64) error {
 }
 
 // GetEvents возвращает список всех событий.
-func (s *EventService) GetEvents(ctx context.Context) ([]models.Event, error) {
-	return s.events.GetEvents(ctx)
+func (s *EventService) GetEvents(ctx context.Context, limit int) ([]models.Event, error) {
+	return s.events.GetEvents(ctx, limit)
 }
 
 // UpdateEvent обновляет событие.

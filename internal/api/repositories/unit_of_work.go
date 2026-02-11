@@ -29,14 +29,14 @@ func NewUoW(pool *pgxpool.Pool) *UoW {
 func (u *UoW) WithinTransaction(ctx context.Context, fn func(context.Context, DBTX) error) error {
 	tx, err := u.pool.Begin(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("could not start transaction: %w", err)
 	}
 
 	// rollback должен выполниться, если транзакция не была успешно закоммичена
 	rollbackErr := func() error {
 		err := tx.Rollback(ctx)
 		if err != nil && !errors.Is(err, pgx.ErrTxClosed) {
-			return err
+			return fmt.Errorf("could not rollback transaction: %w", err)
 		}
 		return nil
 	}

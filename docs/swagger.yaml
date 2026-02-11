@@ -330,8 +330,22 @@ definitions:
     properties:
       completed_at:
         type: string
+      created:
+        type: string
+      description:
+        type: string
+      event_date:
+        type: string
       event_id:
         type: integer
+      event_type_code:
+        type: integer
+      icon_url:
+        type: string
+      points:
+        type: integer
+      title:
+        type: string
     type: object
   models.UserSubstructure:
     properties:
@@ -388,7 +402,8 @@ paths:
       description: Добавляет запись о выполнении события конкретным пользователем.
         Требует прав администратора.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -432,11 +447,17 @@ paths:
       description: Возвращает полный список выполненных событий всех пользователей
         системы.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
         type: string
+      - default: 50
+        description: Максимальное количество мероприятий в выдаче
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -465,7 +486,8 @@ paths:
         о созданной записи. Требует авторизации администратора. Поля помимо title
         могут не указываться, тогда они будут заменены на стандартные значения
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -505,7 +527,8 @@ paths:
       description: Создаёт рекомендацию для события с указанием времени истечения
         в часах с момента создания. Возвращает ID события. Требует авторизации пользователя.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -541,7 +564,8 @@ paths:
       description: Удаляет отметку о выполнении события конкретным пользователем.
         Требует прав администратора.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -588,7 +612,8 @@ paths:
       - application/json
       description: Удаляет событие по его идентификатору. Требует прав администратора.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -631,7 +656,8 @@ paths:
       description: Удаляет рекомендацию по заданному ID. Если рекомендация не найдена,
         возвращает ошибку 404. В случае других ошибок возвращается ошибка 500.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -670,7 +696,8 @@ paths:
       - application/json
       description: Удаляет пользователя по его user_id. Требует прав администратора.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -712,11 +739,17 @@ paths:
       - application/json
       description: Возвращает полный список событий из базы данных.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
         type: string
+      - default: 50
+        description: Максимальное количество мероприятий в выдаче
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -743,6 +776,11 @@ paths:
         name: Authorization
         required: true
         type: string
+      - default: 50
+        description: Максимальное количество студентов в выдаче
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -769,7 +807,8 @@ paths:
         Производит частичное обновление данных события по его ID.
         Обновляются только те поля, которые переданы в теле запроса.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -854,6 +893,11 @@ paths:
         name: Authorization
         required: true
         type: string
+      - default: 50
+        description: Максимальное количество пользователей в выдаче
+        in: query
+        name: limit
+        type: integer
       produces:
       - application/json
       responses:
@@ -1101,7 +1145,8 @@ paths:
       description: Возвращает список рекомендаций для событий. Если произошла ошибка
         при получении данных, возвращается код ошибки 500.
       parameters:
-      - description: 'Bearer токен авторизации. Формат: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен авторизации. Формат: Bearer {token}'
         in: header
         name: Authorization
         required: true
@@ -1159,7 +1204,8 @@ paths:
         - Олимпиады (type = 3)
         - Проекты (type = 4)
       parameters:
-      - description: 'Bearer токен в формате: Bearer {token}'
+      - default: Bearer
+        description: 'Bearer токен в формате: Bearer {token}'
         in: header
         name: Authorization
         required: true

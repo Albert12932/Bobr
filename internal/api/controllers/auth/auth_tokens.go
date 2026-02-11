@@ -5,9 +5,10 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // RefreshToken Обновление access и refresh токенов
@@ -24,9 +25,9 @@ import (
 // @Router       /auth/refresh [post]
 func RefreshToken(service *services.RefreshTokensService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		var body models.RefreshTokenRequest
 
 		// Берем refresh токен из тела запроса
-		var body models.RefreshTokenRequest
 		if err := c.ShouldBindJSON(&body); err != nil {
 			c.JSON(http.StatusBadRequest,
 				models.ErrorResponse{
@@ -40,6 +41,8 @@ func RefreshToken(service *services.RefreshTokensService) gin.HandlerFunc {
 		defer cancel()
 
 		resp, err := service.RefreshToken(ctx, body.RefreshToken)
+
+		// Обработка ошибок
 		if err != nil {
 			switch {
 			case errors.Is(err, services.ErrNoTokensFound):

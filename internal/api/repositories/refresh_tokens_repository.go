@@ -2,10 +2,9 @@ package repositories
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"time"
 
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 )
 
@@ -38,11 +37,12 @@ func (r *RefreshTokensRepository) GetUserIdByRefreshToken(ctx context.Context, r
 		refreshTokenHash,
 	).Scan(&userId)
 
-	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, nil
+	// Обработка ошибок
+	if err != nil {
+		return 0, fmt.Errorf("could not get user id: %w", err)
 	}
 
-	return userId, err
+	return userId, nil
 }
 
 // GetRoleLevelByUserId - возвращает уровень роли пользователя.
@@ -56,12 +56,16 @@ func (r *RefreshTokensRepository) GetRoleLevelByUserId(ctx context.Context, user
 		userId,
 	).Scan(&level)
 
-	return level, err
+	if err != nil {
+		return 0, fmt.Errorf("could not get user role_level: %w", err)
+	}
+
+	return level, nil
 }
 
 // UpdateRefreshToken - обновляет refresh-токен пользователя (обычно внутри транзакции).
 func (r *RefreshTokensRepository) UpdateRefreshToken(ctx context.Context, userId int64, newRefreshToken []byte) (pgconn.CommandTag, error) {
-	return r.db.Exec(ctx,
+	tag, err := r.db.Exec(ctx,
 		`UPDATE refresh_tokens
          SET token_hash = $1, expires_at = $2
          WHERE user_id = $3`,
@@ -69,24 +73,36 @@ func (r *RefreshTokensRepository) UpdateRefreshToken(ctx context.Context, userId
 		time.Now().Add(30*24*time.Hour),
 		userId,
 	)
+	if err != nil || tag.RowsAffected() == 0 {
+		return pgconn.CommandTag{}, fmt.Errorf("could not update refresh token: %w", err)
+	}
+	return tag, nil
 }
 
 // DeleteRefreshTokens - удаляет все refresh-токены пользователя (обычно внутри транзакции).
 func (r *RefreshTokensRepository) DeleteRefreshTokens(ctx context.Context, userId int64) (pgconn.CommandTag, error) {
-	return r.db.Exec(ctx,
+	tag, err := r.db.Exec(ctx,
 		`DELETE FROM refresh_tokens
          WHERE user_id = $1`,
 		userId,
 	)
+	if err != nil || tag.RowsAffected() == 0 {
+		return pgconn.CommandTag{}, fmt.Errorf("could not delete refresh token: %w", err)
+	}
+	return tag, nil
 }
 
 // CreateRefreshToken - создаёт новый refresh-токен (обычно внутри транзакции).
 func (r *RefreshTokensRepository) CreateRefreshToken(ctx context.Context, userId int64, refreshTokenHash []byte, expiresAt time.Time) (pgconn.CommandTag, error) {
-	return r.db.Exec(ctx,
+	tag, err := r.db.Exec(ctx,
 		`INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
          VALUES ($1, $2, $3)`,
 		userId,
 		refreshTokenHash,
 		expiresAt,
 	)
+	if err != nil || tag.RowsAffected() == 0 {
+		return pgconn.CommandTag{}, fmt.Errorf("could not create refresh token: %w", err)
+	}
+	return tag, nil
 }

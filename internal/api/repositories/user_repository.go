@@ -3,11 +3,10 @@ package repositories
 import (
 	"bobri/internal/models"
 	"context"
-	"errors"
+	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/georgysavva/scany/v2/pgxscan"
-	"github.com/jackc/pgx/v5"
 )
 
 // UserRepository отвечает за работу с таблицей users и связанными сущностями.
@@ -42,6 +41,9 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (mode
 		 WHERE email = $1`,
 		email,
 	)
+	if err != nil {
+		return user, fmt.Errorf("could not get user: %w", err)
+	}
 
 	return user, err
 }
@@ -64,6 +66,9 @@ func (r *UserRepository) GetStudentByBookId(ctx context.Context, bookId int64) (
 		 WHERE book_id = $1`,
 		bookId,
 	)
+	if err != nil {
+		return student, fmt.Errorf("could not get student: %w", err)
+	}
 
 	return student, err
 }
@@ -87,8 +92,11 @@ func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (int6
 		user.Email,
 		user.RoleLevel,
 	).Scan(&id)
+	if err != nil {
+		return id, fmt.Errorf("could not create user: %w", err)
+	}
 
-	return id, err
+	return id, nil
 }
 
 // CheckUserWithEmailExists проверяет существование пользователя по email.
@@ -99,6 +107,9 @@ func (r *UserRepository) CheckUserWithEmailExists(ctx context.Context, email str
 		`SELECT EXISTS(SELECT 1 FROM users WHERE email = $1)`,
 		email,
 	).Scan(&exists)
+	if err != nil {
+		return exists, fmt.Errorf("could not check user with email exists: %w", err)
+	}
 
 	return exists, err
 }
@@ -116,7 +127,7 @@ func (r *UserRepository) DeleteUser(ctx context.Context, userId int64) (int64, e
 }
 
 // GetUsersWithMaxRole возвращает всех пользователей, у которых роль <= maxRole.
-func (r *UserRepository) GetUsersWithMaxRole(ctx context.Context, maxRole int64) ([]models.User, error) {
+func (r *UserRepository) GetUsersWithMaxRole(ctx context.Context, maxRole int64, limit int) ([]models.User, error) {
 	var users []models.User
 
 	err := pgxscan.Select(ctx, r.db, &users,
@@ -131,9 +142,8 @@ func (r *UserRepository) GetUsersWithMaxRole(ctx context.Context, maxRole int64)
 		        email,
 		        role_level
 		 FROM users
-		 WHERE role_level <= $1`,
-		maxRole,
-	)
+		 WHERE role_level <= $1 limit $2`,
+		maxRole, limit)
 
 	return users, err
 }
@@ -228,12 +238,12 @@ func (r *UserRepository) UpdateUser(ctx context.Context, req models.UpdateUserRe
 
 	query, args, err := builder.PlaceholderFormat(sq.Dollar).ToSql()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("could not convert to sql query: %w", err)
 	}
 
 	tag, err := r.db.Exec(ctx, query, args...)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("could not update user: %w", err)
 	}
 
 	return tag.RowsAffected(), nil
@@ -249,9 +259,8 @@ func (r *UserRepository) GetUserPoints(ctx context.Context, userID int64) (int64
          WHERE user_id = $1`,
 		userID,
 	).Scan(&points)
-
-	if errors.Is(err, pgx.ErrNoRows) {
-		return 0, nil
+	if err != nil {
+		return 0, fmt.Errorf("could not get user points: %w", err)
 	}
 
 	return points, err
@@ -273,6 +282,9 @@ func (r *UserRepository) GetLeaderboard(ctx context.Context, limit int) ([]model
          LIMIT $1`
 
 	err := pgxscan.Select(ctx, r.db, &users, query, limit)
+	if err != nil {
+		return nil, fmt.Errorf("could not get leaderboard: %w", err)
+	}
 
 	return users, err
 }
@@ -282,7 +294,7 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, userId int64, hash 
 		`UPDATE users SET password = $1 WHERE id = $2`,
 		hash, userId,
 	)
-	return err
+	return fmt.Errorf("could not update password: %w", err)
 }
 
 func (r *UserRepository) GetSuggests(ctx context.Context) ([]models.Event, error) {
@@ -297,7 +309,7 @@ func (r *UserRepository) GetSuggests(ctx context.Context) ([]models.Event, error
 	FROM events e
 	WHERE e.id IN (SELECT event_id FROM suggest_events WHERE event_id NOT IN (SELECT event_id FROM deleted));`)
 	if err != nil {
-		return suggests, err
+		return suggests, fmt.Errorf("could not get suggests: %w", err)
 	}
 
 	return suggests, nil

@@ -5,9 +5,10 @@ import (
 	"bobri/internal/models"
 	"context"
 	"errors"
-	"github.com/gin-gonic/gin"
 	"strconv"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 // DeleteEvent  Удаление события по ID
@@ -16,7 +17,7 @@ import (
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header  string  true   "Bearer токен авторизации. Формат: Bearer {token}"
+// @Param        Authorization  header  string  true   "Bearer токен авторизации. Формат: Bearer {token}" default(Bearer )
 // @Param        id             path    int     true   "ID события для удаления"
 // @Success      200  {object}  models.DeleteEventResponse "Событие успешно удалено"
 // @Failure      400  {object}  models.ErrorResponse    "Некорректный ID события"

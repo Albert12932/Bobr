@@ -17,7 +17,7 @@ import (
 // @Tags         admin
 // @Accept       json
 // @Produce      json
-// @Param        Authorization  header  string  true   "Bearer токен авторизации. Формат: Bearer {token}"
+// @Param        Authorization  header  string  true   "Bearer токен авторизации. Формат: Bearer {token}" default(Bearer )
 // @Param        email          path    string  true   "UserId удаляемого пользователя"
 // @Success      200  {object}  models.DeleteUserResponse    "Пользователь успешно удалён"
 // @Failure      400  {object}  models.ErrorResponse "Передан пустой id пользователя"

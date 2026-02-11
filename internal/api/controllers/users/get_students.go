@@ -4,6 +4,7 @@ import (
 	"bobri/internal/api/services"
 	"bobri/internal/models"
 	"context"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -16,15 +17,20 @@ import (
 // @Produce      json
 // @Security     BearerAuth
 // @Param        Authorization  header  string  true  "Bearer токен" default(Bearer )
+// @Param        limit   query    int    false   "Максимальное количество студентов в выдаче"  default(50)
 // @Success      200  {array}  models.Student             "Список студентов"
 // @Failure      500  {object} models.ErrorResponse        "Ошибка при запросе или чтении данных"
 // @Router       /admin/students [get]
 func GetStudents(service *services.StudentsService) gin.HandlerFunc {
 	return func(c *gin.Context) {
+
+		limitStr := c.DefaultQuery("limit", "50")
+		limit, _ := strconv.Atoi(limitStr)
+
 		ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second)
 		defer cancel()
 
-		students, err := service.GetStudents(ctx)
+		students, err := service.GetStudents(ctx, limit)
 		if err != nil {
 			c.JSON(500, models.ErrorResponse{
 				Error:   err.Error(),
