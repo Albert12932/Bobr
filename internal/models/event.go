@@ -11,6 +11,7 @@ type Event struct {
 	IconUrl       string    `json:"icon_url" db:"icon_url"`
 	EventDate     time.Time `json:"event_date" db:"event_date"`
 	CreatedAt     time.Time `json:"created" db:"created_at"`
+	Link          string    `json:"link" db:"link"`
 }
 type UserCompletedEvent struct {
 	EventID       int64     `json:"event_id" db:"id"`
@@ -21,6 +22,7 @@ type UserCompletedEvent struct {
 	IconUrl       string    `json:"icon_url" db:"icon_url"`
 	EventDate     time.Time `json:"event_date" db:"event_date"`
 	CreatedAt     time.Time `json:"created" db:"created_at"`
+	Link          string    `json:"link" db:"link"`
 	Completed     time.Time `json:"completed_at" db:"completed_at"`
 }
 type CompletedEvent struct {
@@ -45,6 +47,7 @@ type CreateEventRequest struct {
 	Points        int        `json:"points"`
 	IconUrl       string     `json:"icon_url"`
 	EventDate     *time.Time `json:"event_date"`
+	Link          string     `json:"link"`
 }
 type CreateEventResponse struct {
 	EventID       int64     `json:"event_id" db:"id"`
@@ -55,6 +58,7 @@ type CreateEventResponse struct {
 	IconUrl       string    `json:"icon_url"`
 	EventDate     time.Time `json:"event_date"`
 	CreatedAt     time.Time `json:"created"`
+	Link          string    `json:"link"`
 }
 
 type UpdateEventRequest struct {
@@ -66,6 +70,7 @@ type UpdateEventRequest struct {
 		Points        int        `json:"points,omitempty"`
 		IconUrl       string     `json:"icon_url,omitempty"`
 		EventDate     *time.Time `json:"event_date,omitempty"`
+		Link          string     `json:"link,omitempty"`
 	} `json:"new_data"`
 }
 

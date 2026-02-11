@@ -23,6 +23,7 @@ type User struct {
 	Password     []byte    `json:"password" db:"password"`
 	Email        string    `json:"email" db:"email"`
 	RoleLevel    int64     `json:"role_level" db:"role_level"`
+	Avatar       string    `json:"avatar" db:"avatar"`
 }
 type UserSubstructure struct {
 	ID           int64  `json:"id"`
@@ -31,6 +32,7 @@ type UserSubstructure struct {
 	FirstName    string `json:"first_name"`
 	RoleLevel    int64  `json:"role_level"`
 	StudentGroup string `json:"student_group"`
+	Avatar       string `json:"avatar"`
 }
 
 type ProfileResponse struct {
@@ -43,6 +45,7 @@ type ProfileResponse struct {
 	Email        string    `json:"email"`
 	RoleLevel    int64     `json:"role_level"`
 	TotalPoints  int64     `json:"total_points"`
+	Avatar       string    `json:"avatar"`
 }
 
 type DeleteUserRequest struct {
@@ -61,6 +64,7 @@ type UserUpdateData struct {
 	StudentGroup string `json:"student_group,omitempty"`
 	Email        string `json:"email,omitempty"`
 	RoleLevel    int64  `json:"role_level,omitempty"`
+	Avatar       string `json:"avatar,omitempty"`
 }
 type UpdateUserRequest struct {
 	UserId  int64          `json:"user_id"`
@@ -73,9 +77,10 @@ type UpdateUserResponse struct {
 }
 
 type UserRating struct {
-	UserId   int64 `json:"user_id"`
-	Points   int64 `json:"points"`
-	Position int64 `json:"position"`
+	UserId   int64  `json:"user_id"`
+	Points   int64  `json:"points"`
+	Position int64  `json:"position"`
+	Avatar   string `json:"avatar"`
 }
 type UserWithPoints struct {
 	UserId      int64  `json:"user_id"`

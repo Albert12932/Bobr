@@ -56,6 +56,10 @@ func (r *EventRepository) CreateEvent(ctx context.Context, data models.CreateEve
 		columns = append(columns, "event_type_code")
 		values = append(values, data.EventTypeCode)
 	}
+	if data.Link != "" {
+		columns = append(columns, "link")
+		values = append(values, data.Link)
+	}
 
 	builder = builder.Columns(columns...).Values(values...).Suffix("RETURNING id")
 
@@ -79,7 +83,7 @@ func (r *EventRepository) GetEventById(ctx context.Context, id int64) (models.Cr
 
 	err := pgxscan.Get(ctx, r.db, &result,
 		`SELECT id, title, description, event_type_code, points,
-		        icon_url, event_date, created_at
+		        icon_url, event_date, link, created_at
          FROM events WHERE id = $1`,
 		id,
 	)
@@ -111,7 +115,7 @@ func (r *EventRepository) GetEvents(ctx context.Context, limit int) ([]models.Ev
 
 	err := pgxscan.Select(ctx, r.db, &events,
 		`SELECT id, title, description, event_type_code, points,
-		        icon_url, event_date, created_at
+		        icon_url, event_date, link, created_at
 		 FROM events limit $1`, limit)
 	if err != nil {
 		return nil, fmt.Errorf("could not found events: %w", err)
@@ -137,6 +141,9 @@ func (r *EventRepository) UpdateEvent(ctx context.Context, req models.UpdateEven
 	}
 	if req.NewData.EventDate != nil && !req.NewData.EventDate.IsZero() {
 		builder = builder.Set("event_date", req.NewData.EventDate)
+	}
+	if req.NewData.Link != "" {
+		builder = builder.Set("link", req.NewData.Link)
 	}
 	if req.NewData.EventTypeCode != 0 {
 		builder = builder.Set("event_type_code", req.NewData.EventTypeCode)

@@ -36,7 +36,8 @@ func (r *UserRepository) GetUserByEmail(ctx context.Context, email string) (mode
 		        middle_name,
 		        password,
 		        email,
-		        role_level
+		        role_level,
+		        avatar
 		 FROM users
 		 WHERE email = $1`,
 		email,
@@ -79,7 +80,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (int6
 
 	err := r.db.QueryRow(ctx,
 		`INSERT INTO users (book_id, name, surname, middle_name, student_group, birth_date,
-		                    password, email, role_level)
+		                    password, email, role_level, avatar)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING id`,
 		user.BookId,
@@ -91,6 +92,7 @@ func (r *UserRepository) CreateUser(ctx context.Context, user models.User) (int6
 		user.Password,
 		user.Email,
 		user.RoleLevel,
+		user.Avatar,
 	).Scan(&id)
 	if err != nil {
 		return id, fmt.Errorf("could not create user: %w", err)
@@ -140,7 +142,8 @@ func (r *UserRepository) GetUsersWithMaxRole(ctx context.Context, maxRole int64,
 		        COALESCE(student_group, '') as student_group,
 		        password,
 		        email,
-		        role_level
+		        role_level,
+		        avatar
 		 FROM users
 		 WHERE role_level <= $1 limit $2`,
 		maxRole, limit)
@@ -160,7 +163,8 @@ func (r *UserRepository) GetProfileByUserID(ctx context.Context, userID int64) (
 		        COALESCE(birth_date, TO_DATE('1970-01-01','YYYY-MM-DD')) as birth_date,
 		        COALESCE(student_group, '') as student_group,
 		        email,
-		        role_level
+		        role_level,
+		        avatar
 		 FROM users
 		 WHERE id = $1`,
 		userID,
@@ -233,6 +237,9 @@ func (r *UserRepository) UpdateUser(ctx context.Context, req models.UpdateUserRe
 	if req.NewData.RoleLevel != 0 {
 		builder = builder.Set("role_level", req.NewData.RoleLevel)
 	}
+	if req.NewData.Avatar != "" {
+		builder = builder.Set("avatar", req.NewData.Avatar)
+	}
 
 	builder = builder.Where(sq.Eq{"id": req.UserId})
 
@@ -275,6 +282,7 @@ func (r *UserRepository) GetLeaderboard(ctx context.Context, limit int) ([]model
 		        u.name,
 		        u.surname,
 		        up.total_points,
+		        u.avatar,
 		        ROW_NUMBER() OVER (ORDER BY up.total_points DESC) as position
          FROM user_points up
          JOIN users u ON up.user_id = u.id

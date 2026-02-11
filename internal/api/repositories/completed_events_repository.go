@@ -90,7 +90,7 @@ func (r *CompletedEventsRepository) GetCompletedEventsWithStats(ctx context.Cont
 
 	// 1. Получаем выполненные события
 	err := pgxscan.Select(ctx, r.db, &resp.Events,
-		`SELECT e.id AS id, e.title, e.description, e.event_type_code, e.points, e.icon_url, e.event_date, e.created_at,
+		`SELECT e.id AS id, e.title, e.description, e.event_type_code, e.points, e.icon_url, e.event_date, e.created_at, e.link,
 	ce.completed_at
      FROM events e
      JOIN completed_events ce ON e.id = ce.event_id

@@ -1391,6 +1391,9 @@ const docTemplate = `{
                 "icon_url": {
                     "type": "string"
                 },
+                "link": {
+                    "type": "string"
+                },
                 "points": {
                     "type": "integer"
                 },
@@ -1418,6 +1421,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "icon_url": {
+                    "type": "string"
+                },
+                "link": {
                     "type": "string"
                 },
                 "points": {
@@ -1510,6 +1516,9 @@ const docTemplate = `{
                 "icon_url": {
                     "type": "string"
                 },
+                "link": {
+                    "type": "string"
+                },
                 "points": {
                     "type": "integer"
                 },
@@ -1547,6 +1556,9 @@ const docTemplate = `{
         "models.ProfileResponse": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "birth_date": {
                     "type": "string"
                 },
@@ -1707,6 +1719,9 @@ const docTemplate = `{
                         "icon_url": {
                             "type": "string"
                         },
+                        "link": {
+                            "type": "string"
+                        },
                         "points": {
                             "type": "integer"
                         },
@@ -1745,6 +1760,9 @@ const docTemplate = `{
         "models.User": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "birth_date": {
                     "type": "string"
                 },
@@ -1804,6 +1822,9 @@ const docTemplate = `{
                 "icon_url": {
                     "type": "string"
                 },
+                "link": {
+                    "type": "string"
+                },
                 "points": {
                     "type": "integer"
                 },
@@ -1815,6 +1836,9 @@ const docTemplate = `{
         "models.UserSubstructure": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "book_id": {
                     "type": "integer"
                 },
@@ -1838,6 +1862,9 @@ const docTemplate = `{
         "models.UserUpdateData": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "book_id": {
                     "type": "integer"
                 },

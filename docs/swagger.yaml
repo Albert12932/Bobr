@@ -72,6 +72,8 @@ definitions:
         type: integer
       icon_url:
         type: string
+      link:
+        type: string
       points:
         type: integer
       title:
@@ -92,6 +94,8 @@ definitions:
       event_type_code:
         type: integer
       icon_url:
+        type: string
+      link:
         type: string
       points:
         type: integer
@@ -151,6 +155,8 @@ definitions:
         type: integer
       icon_url:
         type: string
+      link:
+        type: string
       points:
         type: integer
       title:
@@ -175,6 +181,8 @@ definitions:
     type: object
   models.ProfileResponse:
     properties:
+      avatar:
+        type: string
       birth_date:
         type: string
       book_id:
@@ -279,6 +287,8 @@ definitions:
             type: integer
           icon_url:
             type: string
+          link:
+            type: string
           points:
             type: integer
           title:
@@ -303,6 +313,8 @@ definitions:
     type: object
   models.User:
     properties:
+      avatar:
+        type: string
       birth_date:
         type: string
       book_id:
@@ -342,6 +354,8 @@ definitions:
         type: integer
       icon_url:
         type: string
+      link:
+        type: string
       points:
         type: integer
       title:
@@ -349,6 +363,8 @@ definitions:
     type: object
   models.UserSubstructure:
     properties:
+      avatar:
+        type: string
       book_id:
         type: integer
       email:
@@ -364,6 +380,8 @@ definitions:
     type: object
   models.UserUpdateData:
     properties:
+      avatar:
+        type: string
       book_id:
         type: integer
       email:

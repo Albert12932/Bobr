@@ -64,6 +64,7 @@ func (s *LoginService) Login(ctx context.Context, email string, password string)
 				FirstName:    user.Name,
 				RoleLevel:    user.RoleLevel,
 				StudentGroup: user.StudentGroup,
+				Avatar:       user.Avatar,
 			},
 		}
 

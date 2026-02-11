@@ -1380,6 +1380,9 @@
                 "icon_url": {
                     "type": "string"
                 },
+                "link": {
+                    "type": "string"
+                },
                 "points": {
                     "type": "integer"
                 },
@@ -1407,6 +1410,9 @@
                     "type": "integer"
                 },
                 "icon_url": {
+                    "type": "string"
+                },
+                "link": {
                     "type": "string"
                 },
                 "points": {
@@ -1499,6 +1505,9 @@
                 "icon_url": {
                     "type": "string"
                 },
+                "link": {
+                    "type": "string"
+                },
                 "points": {
                     "type": "integer"
                 },
@@ -1536,6 +1545,9 @@
         "models.ProfileResponse": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "birth_date": {
                     "type": "string"
                 },
@@ -1696,6 +1708,9 @@
                         "icon_url": {
                             "type": "string"
                         },
+                        "link": {
+                            "type": "string"
+                        },
                         "points": {
                             "type": "integer"
                         },
@@ -1734,6 +1749,9 @@
         "models.User": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "birth_date": {
                     "type": "string"
                 },
@@ -1793,6 +1811,9 @@
                 "icon_url": {
                     "type": "string"
                 },
+                "link": {
+                    "type": "string"
+                },
                 "points": {
                     "type": "integer"
                 },
@@ -1804,6 +1825,9 @@
         "models.UserSubstructure": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "book_id": {
                     "type": "integer"
                 },
@@ -1827,6 +1851,9 @@
         "models.UserUpdateData": {
             "type": "object",
             "properties": {
+                "avatar": {
+                    "type": "string"
+                },
                 "book_id": {
                     "type": "integer"
                 },
