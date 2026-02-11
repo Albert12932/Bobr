@@ -3,6 +3,8 @@ package repositories
 import (
 	"bobri/internal/models"
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
@@ -176,7 +178,11 @@ func (r *UserRepository) GetProfileByUserID(ctx context.Context, userID int64) (
 
 	points, err := r.GetUserPoints(ctx, userID)
 	if err != nil {
-		return models.ProfileResponse{}, err
+		if errors.Is(err, sql.ErrNoRows) {
+			points = 0
+		} else {
+			return models.ProfileResponse{}, err
+		}
 	}
 
 	profile.TotalPoints = points

@@ -68,7 +68,27 @@ func (r *CompletedEventsRepository) DeleteCompletedEvent(ctx context.Context, us
 	if err != nil || tag.RowsAffected() == 0 {
 		return pgconn.CommandTag{}, fmt.Errorf("could not delete completed event: %w", err)
 	}
+
+	var points int
+	err = r.db.QueryRow(ctx, `SELECT points FROM events WHERE id = $1`, eventId).Scan(&points)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return pgconn.CommandTag{}, fmt.Errorf("event points not found for eventId %d: %w", eventId, err)
+		}
+		return pgconn.CommandTag{}, err
+	}
+
+	tag, err = r.db.Exec(ctx,
+		`INSERT INTO user_points (user_id, total_points) VALUES ($1, $2) ON CONFLICT (user_id)
+         DO UPDATE SET total_points = user_points.total_points - EXCLUDED.total_points`, userId, points,
+	)
+	if err != nil || tag.RowsAffected() == 0 {
+		return pgconn.CommandTag{}, fmt.Errorf("could not insert update user points: %w", err)
+	}
+
 	return tag, nil
+
 }
 
 // GetAllCompletedEvents Получить все события
